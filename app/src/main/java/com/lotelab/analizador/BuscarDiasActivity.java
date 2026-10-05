@@ -1,5 +1,5 @@
 package com.lotelab.analizador;
-import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.view.*;import android.widget.*;import android.graphics.*;import android.graphics.drawable.*;import java.util.*;
+import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.view.*;import android.widget.*;import android.graphics.*;import java.util.*;
 public class BuscarDiasActivity extends Activity{
 LinearLayout lineaRangos1,lineaRangos2,grillaDias;
 TextView diasSeleccionados;
@@ -45,7 +45,6 @@ if(dia>31)break;
 Button btnDia=new Button(this);
 btnDia.setText(String.valueOf(dia));
 btnDia.setTextSize(14);
-btnDia.setTag(dia);
 final int d=dia;
 btnDia.setOnClickListener(v->{if(seleccionados.contains(d))seleccionados.remove(d);else seleccionados.add(d);actualizarGrilla();});
 LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1);
@@ -60,19 +59,17 @@ grillaDias.addView(filaLayout);
 }
 void actualizarGrilla(){
 crearGrillaDias();
-if(seleccionados.isEmpty()){diasSeleccionados.setText("Días seleccionados: (ninguno)");return;}
+if(seleccionados.isEmpty()){diasSeleccionados.setText("Dias seleccionados: (ninguno)");return;}
 List<Integer> lista=new ArrayList<>(seleccionados);
 Collections.sort(lista);
-StringBuilder sb=new StringBuilder("Días seleccionados: ");
+StringBuilder sb=new StringBuilder("Dias seleccionados: ");
 for(int i=0;i<lista.size();i++){sb.append(lista.get(i));if(i<lista.size()-1)sb.append(", ");}
 diasSeleccionados.setText(sb.toString());
 }
 void buscar(){
-if(seleccionados.isEmpty()){Toast.makeText(this,"Seleccione al menos un día",Toast.LENGTH_SHORT).show();return;}
-List<Integer> lista=new ArrayList<>(seleccionados);
+if(seleccionados.isEmpty()){Toast.makeText(this,"Seleccione al menos un dia",Toast.LENGTH_SHORT).show();return;}
+final List<Integer> lista=new ArrayList<>(seleccionados);
 Collections.sort(lista);
-final StringBuilder titulo=new StringBuilder("Días: ");
-for(int i=0;i<lista.size();i++){titulo.append(lista.get(i));if(i<lista.size()-1)titulo.append(", ");if(i>=15){titulo.append("...");break;}}
 new Thread(()->{
 List<Draw> todos=leerTodos();
 int[][] cntFijo=new int[100][1];int[][] cntC1=new int[100][1];int[][] cntC2=new int[100][1];
@@ -88,14 +85,16 @@ if(f>=0){cntFijo[f][0]++;cntDec[f/10]++;cntTerm[f%10]++;}
 if(c1>=0)cntC1[c1][0]++;
 if(c2>=0)cntC2[c2][0]++;
 }
+StringBuilder titulo=new StringBuilder("Dias: ");
+for(int i=0;i<lista.size();i++){titulo.append(lista.get(i));if(i<lista.size()-1)titulo.append(", ");if(i>=10){titulo.append("...");break;}}
 StringBuilder res=new StringBuilder();
 res.append(titulo).append("\n");
-res.append("Sorteos encontrados: ").append(encontrados).append("\n\n");
-res.append("🔵 FIJO (top 10):\n").append(top10(cntFijo)).append("\n\n");
-res.append("🟢 CORRIDO 1 (top 10):\n").append(top10(cntC1)).append("\n\n");
-res.append("🟠 CORRIDO 2 (top 10):\n").append(top10(cntC2)).append("\n\n");
-res.append("🟣 DECENAS (top 10):\n").append(top10Dig(cntDec)).append("\n\n");
-res.append("🟡 TERMINALES (top 10):\n").append(top10Dig(cntTerm));
+res.append("Sorteos: ").append(encontrados).append("\n\n");
+res.append("[FIJO]\n").append(top10(cntFijo)).append("\n\n");
+res.append("[C1]\n").append(top10(cntC1)).append("\n\n");
+res.append("[C2]\n").append(top10(cntC2)).append("\n\n");
+res.append("[DECENAS]\n").append(top10Dig(cntDec)).append("\n\n");
+res.append("[TERMINALES]\n").append(top10Dig(cntTerm));
 final String r=res.toString();
 runOnUiThread(()->mostrarResultado(titulo.toString(),r));
 }).start();
@@ -107,7 +106,7 @@ int n=arr.length;
 int[] ix=new int[n];for(int i=0;i<n;i++)ix[i]=i;
 for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)if(arr[ix[j]][0]>arr[ix[i]][0]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}
 StringBuilder sb=new StringBuilder();
-for(int i=0;i<10&&i<n;i++){if(arr[ix[i]][0]==0)break;sb.append(String.format("%02d",ix[i])).append("(").append(arr[ix[i]][0]).append(") ");}
+for(int i=0;i<5&&i<n;i++){if(arr[ix[i]][0]==0)break;sb.append(String.format("%02d",ix[i])).append("(").append(arr[ix[i]][0]).append(") ");}
 return sb.length()==0?"(sin datos)":sb.toString();
 }
 String top10Dig(int[] arr){
@@ -115,7 +114,7 @@ int n=arr.length;
 int[] ix=new int[n];for(int i=0;i<n;i++)ix[i]=i;
 for(int i=0;i<n;i++)for(int j=i+1;j<n;j++)if(arr[ix[j]]>arr[ix[i]]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}
 StringBuilder sb=new StringBuilder();
-for(int i=0;i<10&&i<n;i++){if(arr[ix[i]]==0)break;sb.append(ix[i]).append("(").append(arr[ix[i]]).append(") ");}
+for(int i=0;i<5&&i<n;i++){if(arr[ix[i]]==0)break;sb.append(ix[i]).append("(").append(arr[ix[i]]).append(") ");}
 return sb.length()==0?"(sin datos)":sb.toString();
 }
 List<Draw> leerTodos(){
@@ -123,19 +122,13 @@ List<Draw> lista=new ArrayList<>();
 DB db=new DB(this);
 Cursor c=db.all();
 while(c.moveToNext())lista.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));
-c.close();db.close();
+c.close();
 return lista;
 }
 void mostrarResultado(String titulo,String cuerpo){
 AlertDialog.Builder b=new AlertDialog.Builder(this);
 b.setTitle("Resultado");
-ScrollView sv=new ScrollView(this);
-TextView tv=new TextView(this);
-tv.setText(cuerpo);
-tv.setPadding(30,30,30,30);
-tv.setTextSize(13);
-sv.addView(tv);
-b.setView(sv);
+b.setMessage(cuerpo);
 b.setPositiveButton("Cerrar",null);
 b.show();
 }
