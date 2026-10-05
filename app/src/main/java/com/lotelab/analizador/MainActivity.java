@@ -1,8 +1,8 @@
 package com.lotelab.analizador;
-import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.net.Uri;import android.provider.OpenableColumns;import android.view.*;import android.widget.*;import android.graphics.*;import java.io.*;import java.nio.charset.StandardCharsets;import java.util.*;import java.util.zip.*;import javax.xml.parsers.*;import org.w3c.dom.*;
+import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.net.Uri;import android.provider.OpenableColumns;import android.view.*;import android.widget.*;import android.graphics.*;import java.io.*;import java.nio.charset.StandardCharsets;import java.text.*;import java.util.*;import java.util.zip.*;import javax.xml.parsers.*;import org.w3c.dom.*;
 public class MainActivity extends Activity{
-DB db;TextView estado,salida;TableLayout tabla;static final int PICK=10;
-@Override public void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_main);db=new DB(this);estado=findViewById(R.id.estado);salida=findViewById(R.id.salida);tabla=findViewById(R.id.tablaResultados);
+DB db;TextView estado,salida,panelHoy,sugerencia,aciertos;TableLayout tabla;static final int PICK=10;
+@Override public void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_main);db=new DB(this);estado=findViewById(R.id.estado);salida=findViewById(R.id.salida);tabla=findViewById(R.id.tablaResultados);panelHoy=findViewById(R.id.panelHoy);sugerencia=findViewById(R.id.sugerencia);aciertos=findViewById(R.id.aciertos);
 findViewById(R.id.btnImportar).setOnClickListener(v->pick());
 findViewById(R.id.btnNuevo).setOnClickListener(v->nuevo());
 findViewById(R.id.btnCalcular).setOnClickListener(v->calcular());
@@ -15,7 +15,37 @@ void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Inten
 String getName(Uri u){Cursor c=getContentResolver().query(u,null,null,null,null);if(c!=null){try{int x=c.getColumnIndex(OpenableColumns.DISPLAY_NAME);if(c.moveToFirst()&&x>=0)return c.getString(x);}finally{c.close();}}return "archivo";}
 void nuevo(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);String[] h={"Fecha dd-MM-yyyy","T/N","Centena","Fijo","Corrido 1","Corrido 2"};EditText[] e=new EditText[6];for(int i=0;i<6;i++){e[i]=new EditText(this);e[i].setHint(h[i]);l.addView(e[i]);}new AlertDialog.Builder(this).setTitle("Agregar sorteo").setView(l).setPositiveButton("Guardar",(x,w)->{try{db.insert(new Draw(e[0].getText().toString(),e[1].getText().toString(),e[2].getText().toString(),pad(e[3].getText().toString()),pad(e[4].getText().toString()),pad(e[5].getText().toString())));estado.setText("Total: "+db.count());}catch(Exception z){Toast.makeText(this,"Error: "+z.getMessage(),Toast.LENGTH_LONG).show();}}).setNegativeButton("Cancelar",null).show();}
 String pad(String s){s=s.trim();if(s.length()==1)s="0"+s;return s;}
-void calcular(){new Thread(()->{Stats s=Stats.calc(db);runOnUiThread(()->{dibujarTabla(s);estado.setText("Listo. "+db.count()+" sorteos.");});}).start();}
+void calcular(){new Thread(()->{Stats s=Stats.calc(db);runOnUiThread(()->{dibujarTabla(s);mostrarHoy(s);estado.setText("Listo. "+db.count()+" sorteos.");});}).start();}
+void mostrarHoy(Stats s){
+Calendar cal=Calendar.getInstance();
+int diaHoy=cal.get(Calendar.DAY_OF_MONTH);
+String fechaHoy=new SimpleDateFormat("EEEE dd 'de' MMMM 'de' yyyy",new Locale("es","ES")).format(cal.getTime());
+int rangoHoy=rangeDelDia(diaHoy);
+StringBuilder h=new StringBuilder();
+h.append("HOY: ").append(fechaHoy).append(" | ");
+h.append("Dia ").append(diaHoy).append(" -> Rango ").append(Stats.R[rangoHoy]).append(" | ");
+h.append("Sorteos en este rango: ").append(s.sorteosPorRango[rangoHoy]).append(" | ");
+int ultDia=s.ultimoDia;
+if(ultDia>0){h.append("Ultimo sorteo: dia ").append(ultDia).append(" (rango ").append(Stats.R[rangeDelDia(ultDia)]).append(")");}
+panelHoy.setText(h.toString());
+StringBuilder g=new StringBuilder();
+g.append("SUGERENCIA PARA HOY (rango ").append(Stats.R[rangoHoy]).append("):\n");
+g.append("FIJO: ").append(s.top5Fijo[rangoHoy]).append("\n");
+g.append("CORRIDO 1: ").append(s.top5C1[rangoHoy]).append("\n");
+g.append("CORRIDO 2: ").append(s.top5C2[rangoHoy]).append("\n");
+g.append("DECENAS: ").append(s.top5Dec[rangoHoy]).append("\n");
+g.append("TERMINALES: ").append(s.top5Term[rangoHoy]);
+sugerencia.setText(g.toString());
+StringBuilder a=new StringBuilder();
+a.append("ACIERTOS HISTORICOS (sorteos del rango ").append(Stats.R[rangoHoy]).append("):\n");
+a.append("Fijo: ").append(s.acFijo[rangoHoy]).append(" | ");
+a.append("C1: ").append(s.acC1[rangoHoy]).append(" | ");
+a.append("C2: ").append(s.acC2[rangoHoy]).append(" | ");
+a.append("Dec: ").append(s.acDec[rangoHoy]).append(" | ");
+a.append("Term: ").append(s.acTerm[rangoHoy]);
+aciertos.setText(a.toString());
+}
+int rangeDelDia(int dia){if(dia>=1&&dia<=5)return 0;if(dia>=6&&dia<=10)return 1;if(dia>=11&&dia<=15)return 2;if(dia>=16&&dia<=20)return 3;if(dia>=21&&dia<=25)return 4;return 5;}
 void dibujarTabla(Stats s){tabla.removeAllViews();tabla.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] headers={"Rango","Fijo","Corrido 1","Corrido 2","Decenas","Terminales"};
 String[] colores={"#FFFFFF","#1565C0","#2E7D32","#EF6C00","#6A1B9A","#F9A825"};
@@ -46,16 +76,21 @@ static int docx(DB db,byte[] data)throws Exception{ZipInputStream z=new ZipInput
 static Document xml(String s)throws Exception{DocumentBuilderFactory f=DocumentBuilderFactory.newInstance();f.setNamespaceAware(true);return f.newDocumentBuilder().parse(new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8)));}
 static byte[] readAll(InputStream in)throws IOException{ByteArrayOutputStream b=new ByteArrayOutputStream();byte[] x=new byte[8192];int n;while((n=in.read(x))>0)b.write(x,0,n);return b.toByteArray();}}
 static class Stats{
-static String[] R={"1-5","6-10","11-15","16-20","21-25","26-30"};
+static String[] R={"1-5","6-10","11-15","16-20","21-25","26-31"};
 String[] topsFijo=new String[6];String[] topsC1=new String[6];String[] topsC2=new String[6];String[] topsDec=new String[6];String[] topsTerm=new String[6];
-static int range(String date){try{String[] q=date.split("[-/]");int day=Integer.parseInt(q[0]);return Math.min(5,(day-1)/5);}catch(Exception e){return -1;}}
+String[] top5Fijo=new String[6];String[] top5C1=new String[6];String[] top5C2=new String[6];String[] top5Dec=new String[6];String[] top5Term=new String[6];
+int[] sorteosPorRango=new int[6];
+int[] acFijo=new int[6];int[] acC1=new int[6];int[] acC2=new int[6];int[] acDec=new int[6];int[] acTerm=new int[6];
+int ultimoDia=0;
+static int range(String date){try{String[] q=date.split("[-/]");int day=Integer.parseInt(q[0]);if(day>=1&&day<=5)return 0;if(day<=10)return 1;if(day<=15)return 2;if(day<=20)return 3;if(day<=25)return 4;return 5;}catch(Exception e){return -1;}}
 static int num(String s){try{return Integer.parseInt(s);}catch(Exception e){return -1;}}
-static String[] top3(int[] cnt){int[] ix=new int[100];for(int i=0;i<100;i++)ix[i]=i;for(int i=0;i<100;i++)for(int j=i+1;j<100;j++)if(cnt[ix[j]]>cnt[ix[i]]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}String[] res=new String[3];for(int k=0;k<3;k++){res[k]=String.format("%02d",ix[k])+"("+cnt[ix[k]]+")";}return res;}
-static String[] top3dig(int[] cnt){int[] ix=new int[10];for(int i=0;i<10;i++)ix[i]=i;for(int i=0;i<10;i++)for(int j=i+1;j<10;j++)if(cnt[ix[j]]>cnt[ix[i]]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}String[] res=new String[3];for(int k=0;k<3;k++){res[k]=ix[k]+"("+cnt[ix[k]]+")";}return res;}
+static String[] topN(int[] cnt,int n,String fmt){int[] ix=new int[cnt.length];for(int i=0;i<cnt.length;i++)ix[i]=i;for(int i=0;i<cnt.length;i++)for(int j=i+1;j<cnt.length;j++)if(cnt[ix[j]]>cnt[ix[i]]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}String[] res=new String[n];for(int k=0;k<n;k++){if(fmt.equals("num"))res[k]=String.format("%02d",ix[k])+"("+cnt[ix[k]]+")";else res[k]=ix[k]+"("+cnt[ix[k]]+")";}return res;}
 static Stats calc(DB db){
 int[][][] n=new int[6][3][100];
 int[][][] dec=new int[6][3][10];
 int[][][] term=new int[6][3][10];
+int[][][] topFijo3=new int[6][1][3];int[][][] topC13=new int[6][1][3];int[][][] topC23=new int[6][1][3];
+int[][][] topDec3=new int[6][1][3];int[][][] topTerm3=new int[6][1][3];
 int total=0;
 Cursor c=db.all();
 while(c.moveToNext()){
@@ -74,13 +109,44 @@ total++;
 c.close();
 Stats s=new Stats();
 for(int r=0;r<6;r++){
-String[] f=top3(n[r][0]);s.topsFijo[r]=f[0]+" "+f[1]+" "+f[2];
-String[] c1=top3(n[r][1]);s.topsC1[r]=c1[0]+" "+c1[1]+" "+c1[2];
-String[] c2=top3(n[r][2]);s.topsC2[r]=c2[0]+" "+c2[1]+" "+c2[2];
-String[] d=top3dig(dec[r][0]);s.topsDec[r]=d[0]+" "+d[1]+" "+d[2];
-String[] t=top3dig(term[r][0]);s.topsTerm[r]=t[0]+" "+t[1]+" "+t[2];
+String[] f=topN(n[r][0],3,"num");s.topsFijo[r]=f[0]+" "+f[1]+" "+f[2];
+String[] c1=topN(n[r][1],3,"num");s.topsC1[r]=c1[0]+" "+c1[1]+" "+c1[2];
+String[] c2=topN(n[r][2],3,"num");s.topsC2[r]=c2[0]+" "+c2[1]+" "+c2[2];
+String[] d=topN(dec[r][0],3,"dig");s.topsDec[r]=d[0]+" "+d[1]+" "+d[2];
+String[] t=topN(term[r][0],3,"dig");s.topsTerm[r]=t[0]+" "+t[1]+" "+t[2];
+String[] f5=topN(n[r][0],5,"num");s.top5Fijo[r]=f5[0]+" "+f5[1]+" "+f5[2]+" "+f5[3]+" "+f5[4];
+String[] c15=topN(n[r][1],5,"num");s.top5C1[r]=c15[0]+" "+c15[1]+" "+c15[2]+" "+c15[3]+" "+c15[4];
+String[] c25=topN(n[r][2],5,"num");s.top5C2[r]=c25[0]+" "+c25[1]+" "+c25[2]+" "+c25[3]+" "+c25[4];
+String[] d5=topN(dec[r][0],5,"dig");s.top5Dec[r]=d5[0]+" "+d5[1]+" "+d5[2]+" "+d5[3]+" "+d5[4];
+String[] t5=topN(term[r][0],5,"dig");s.top5Term[r]=t5[0]+" "+t5[1]+" "+t5[2]+" "+t5[3]+" "+t5[4];
 }
+Cursor c2=db.all();
+while(c2.moveToNext()){
+int r=range(c2.getString(1));if(r<0)continue;
+s.sorteosPorRango[r]++;
+String[] a={c2.getString(4),c2.getString(5),c2.getString(6)};
+for(int k=0;k<3;k++){int x=num(a[k]);if(x<0||x>=100)continue;
+String top1F=String.format("%02d",numTop1(n[r][0]));
+String top1C1=String.format("%02d",numTop1(n[r][1]));
+String top1C2=String.format("%02d",numTop1(n[r][2]));
+int top1D=digTop1(dec[r][0]);
+int top1T=digTop1(term[r][0]);
+int fVal=num(a[0]),c1Val=num(a[1]),c2Val=num(a[2]);
+if(fVal>=0){int fDec=fVal/10,fTerm=fVal%10;
+if(fVal==numTop1(n[r][0]))s.acFijo[r]++;
+if(c1Val>=0&&c1Val==numTop1(n[r][1]))s.acC1[r]++;
+if(c2Val>=0&&c2Val==numTop1(n[r][2]))s.acC2[r]++;
+if(fDec==top1D)s.acDec[r]++;
+if(fTerm==top1T)s.acTerm[r]++;
+}
+}
+int d=0;try{d=Integer.parseInt(c2.getString(1).split("[-/]")[0]);}catch(Exception ex){}
+if(d>s.ultimoDia)s.ultimoDia=d;
+}
+c2.close();
 return s;
 }
+static int numTop1(int[] cnt){int best=0;for(int i=1;i<cnt.length;i++)if(cnt[i]>cnt[best])best=i;return best;}
+static int digTop1(int[] cnt){int best=0;for(int i=1;i<cnt.length;i++)if(cnt[i]>cnt[best])best=i;return best;}
 }
 }
