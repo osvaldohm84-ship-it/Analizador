@@ -9,6 +9,7 @@ findViewById(R.id.btnCalcular).setOnClickListener(v->calcular());
 findViewById(R.id.btnHistorial).setOnClickListener(v->verHistorial());
 findViewById(R.id.btnResultados).setOnClickListener(v->calcular());
 findViewById(R.id.btnExportar).setOnClickListener(v->exportar());
+findViewById(R.id.btnBuscarDias).setOnClickListener(v->startActivity(new Intent(this,BuscarDiasActivity.class)));
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==PICK&&c==RESULT_OK&&d!=null){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()));}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
