@@ -61,6 +61,42 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
+<TextView
+    android:id="@+id/panelHoy"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="12dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#FFF9C4"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/sugerencia"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#E8F5E9"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/aciertos"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#E3F2FD"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
 <HorizontalScrollView
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
