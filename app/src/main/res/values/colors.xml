@@ -1,1 +1,10 @@
-<resources><color name="primary">#1B5E20</color></resources>
+<resources>
+    <color name="primary">#1B5E20</color>
+    <color name="color_fijo">#1565C0</color>
+    <color name="color_c1">#2E7D32</color>
+    <color name="color_c2">#EF6C00</color>
+    <color name="color_dec">#6A1B9A</color>
+    <color name="color_term">#F9A825</color>
+    <color name="color_header">#37474F</color>
+    <color name="color_rango">#455A64</color>
+</resources>
