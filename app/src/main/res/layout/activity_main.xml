@@ -133,6 +133,30 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
+<TextView
+    android:id="@+id/combinaciones"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#FFF3E0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/backtesting"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#FCE4EC"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
 <HorizontalScrollView
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
