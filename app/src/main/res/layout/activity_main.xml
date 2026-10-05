@@ -97,6 +97,42 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
+<TextView
+    android:id="@+id/calientes"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#FFEBEE"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/frios"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#E1F5FE"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/sesgos"
+    android:text=""
+    android:textSize="13sp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:background="#F3E5F5"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
 <HorizontalScrollView
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
