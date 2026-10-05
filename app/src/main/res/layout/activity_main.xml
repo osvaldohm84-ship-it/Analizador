@@ -1,13 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent">
-<LinearLayout android:orientation="vertical" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-<TextView android:id="@+id/titulo" android:text="ANALIZADOR DE LOTERÍA" android:textSize="24sp" android:textStyle="bold" android:paddingBottom="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/estado" android:text="Preparando historial..." android:textSize="15sp" android:paddingBottom="12dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnImportar" android:text="Importar historial (Excel/CSV/Word)" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnNuevo" android:text="Agregar sorteo futuro" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnCalcular" android:text="Calcular todo" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnHistorial" android:text="Ver historial" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnResultados" android:text="Ver resultados" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<Button android:id="@+id/btnExportar" android:text="Exportar CSV" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-<TextView android:id="@+id/salida" android:text="" android:textSize="14sp" android:paddingTop="16dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-</LinearLayout></ScrollView>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:id="@+id/titulo"
+    android:text="ANALIZADOR DE LOTERIA"
+    android:textSize="22sp"
+    android:textStyle="bold"
+    android:paddingBottom="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/estado"
+    android:text="Preparando historial..."
+    android:textSize="14sp"
+    android:paddingBottom="8dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnImportar"
+    android:text="Importar historial"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnNuevo"
+    android:text="Agregar sorteo futuro"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnCalcular"
+    android:text="Calcular todo"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnHistorial"
+    android:text="Ver historial"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnResultados"
+    android:text="Ver resultados"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnExportar"
+    android:text="Exportar CSV"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<HorizontalScrollView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="12dp">
+
+<TableLayout
+    android:id="@+id/tablaResultados"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:stretchColumns="*"
+    android:background="#E0E0E0"
+    android:padding="1dp"/>
+
+</HorizontalScrollView>
+
+<TextView
+    android:id="@+id/salida"
+    android:text=""
+    android:textSize="12sp"
+    android:paddingTop="12dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+</ScrollView>
