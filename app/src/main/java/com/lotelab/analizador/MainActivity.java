@@ -41,4 +41,4 @@ public class MainActivity extends Activity {
   String text;Stats(String t){text=t;}
   static String top10(int[][][] a,int r,int k){int[] v=new int[10];for(int d=0;d<10;d++)v[d]=a[r][k*10+d][0];int[] ix={0,1,2,3,4,5,6,7,8,9};for(int i=0;i<10;i++)for(int j=i+1;j<10;j++)if(v[ix[j]]>v[ix[i]]||(v[ix[j]]==v[ix[i]]&&ix[j]<ix[i])){int t=ix[i];ix[i]=ix[j];ix[j]=t;}return ix[0]+"("+v[ix[0]]+") "+ix[1]+"("+v[ix[1]]+") "+ix[2]+"("+v[ix[2]]+")";}
  }
-}
+ }
