@@ -9,24 +9,24 @@ findViewById(R.id.btnCalcular).setOnClickListener(v->calcular());
 findViewById(R.id.btnHistorial).setOnClickListener(v->verHistorial());
 findViewById(R.id.btnResultados).setOnClickListener(v->calcular());
 findViewById(R.id.btnExportar).setOnClickListener(v->exportar());
-if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Sorteos: "+db.count());}
+if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==PICK&&c==RESULT_OK&&d!=null){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()));}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
 String getName(Uri u){Cursor c=getContentResolver().query(u,null,null,null,null);if(c!=null){try{int x=c.getColumnIndex(OpenableColumns.DISPLAY_NAME);if(c.moveToFirst()&&x>=0)return c.getString(x);}finally{c.close();}}return "archivo";}
 void nuevo(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);String[] h={"Fecha dd-MM-yyyy","T/N","Centena","Fijo","Corrido 1","Corrido 2"};EditText[] e=new EditText[6];for(int i=0;i<6;i++){e[i]=new EditText(this);e[i].setHint(h[i]);l.addView(e[i]);}new AlertDialog.Builder(this).setTitle("Agregar sorteo").setView(l).setPositiveButton("Guardar",(x,w)->{try{db.insert(new Draw(e[0].getText().toString(),e[1].getText().toString(),e[2].getText().toString(),pad(e[3].getText().toString()),pad(e[4].getText().toString()),pad(e[5].getText().toString())));estado.setText("Total: "+db.count());}catch(Exception z){Toast.makeText(this,"Error: "+z.getMessage(),Toast.LENGTH_LONG).show();}}).setNegativeButton("Cancelar",null).show();}
 String pad(String s){s=s.trim();if(s.length()==1)s="0"+s;return s;}
-void calcular(){new Thread(()->{Stats s=Stats.calc(db);runOnUiThread(()->{dibujarTabla(s);mostrarHoy(s);mostrarCalientes(s);mostrarFrios(s);mostrarSesgos(s);mostrarCombinaciones(s);mostrarBacktesting(s);estado.setText("Listo. "+db.count()+" sorteos.");});}).start();}
-void mostrarHoy(Stats s){
+void calcular(){new Thread(()->{try{List<Draw> lista=leerTodos();Stats s=Stats.calc(lista);runOnUiThread(()->{dibujarTabla(s);mostrarHoy(s,lista);mostrarCalientes(s);mostrarFrios(s);mostrarSesgos(s);mostrarCombinaciones(s);mostrarBacktesting(s);estado.setText("Listo. "+lista.size()+" sorteos procesados.");});}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
+List<Draw> leerTodos(){List<Draw> lista=new ArrayList<>();Cursor c=db.all();while(c.moveToNext()){lista.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));}c.close();return lista;}
+void mostrarHoy(Stats s,List<Draw> lista){
 Calendar cal=Calendar.getInstance();
 int diaHoy=cal.get(Calendar.DAY_OF_MONTH);
 String fechaHoy=new SimpleDateFormat("EEEE dd 'de' MMMM 'de' yyyy",new Locale("es","ES")).format(cal.getTime());
-int rangoHoy=rangeDelDia(diaHoy);
+int rangoHoy=Stats.rangeDelDia(diaHoy);
 StringBuilder h=new StringBuilder();
 h.append("HOY: ").append(fechaHoy).append(" | ");
 h.append("Dia ").append(diaHoy).append(" -> Rango ").append(Stats.R[rangoHoy]).append(" | ");
-h.append("Sorteos en este rango: ").append(s.sorteosPorRango[rangoHoy]).append(" | ");
-int ultDia=s.ultimoDia;
-if(ultDia>0){h.append("Ultimo sorteo: dia ").append(ultDia).append(" (rango ").append(Stats.R[rangeDelDia(ultDia)]).append(")");}
+h.append("Total sorteos: ").append(lista.size()).append(" | ");
+h.append("En este rango: ").append(s.sorteosPorRango[rangoHoy]);
 panelHoy.setText(h.toString());
 StringBuilder g=new StringBuilder();
 g.append("SUGERENCIA PARA HOY (rango ").append(Stats.R[rangoHoy]).append("):\n");
@@ -47,19 +47,19 @@ aciertos.setText(a.toString());
 }
 void mostrarCalientes(Stats s){
 StringBuilder c=new StringBuilder();
-c.append("🔥 CALIENTES HISTORICO (todos):\n");
+c.append("🔥 CALIENTES HISTORICO (").append(s.totalHist).append(" sorteos):\n");
 c.append(s.top10CalientesHist).append("\n");
-c.append("🔥 CALIENTES RECIENTE (ultimos 1000):\n");
+c.append("🔥 CALIENTES RECIENTE (").append(s.totalRec).append(" sorteos):\n");
 c.append(s.top10CalientesRec).append("\n");
-c.append("⭐ ROBUSTOS (en ambos):\n");
+c.append("⭐ ROBUSTOS (top 5 en ambos):\n");
 c.append(s.robustosCalientes);
 calientes.setText(c.toString());
 }
 void mostrarFrios(Stats s){
 StringBuilder f=new StringBuilder();
-f.append("❄️ FRIOS HISTORICO (todos):\n");
+f.append("❄️ FRIOS HISTORICO:\n");
 f.append(s.top10FriosHist).append("\n");
-f.append("❄️ FRIOS RECIENTE (ultimos 1000):\n");
+f.append("❄️ FRIOS RECIENTE:\n");
 f.append(s.top10FriosRec);
 frios.setText(f.toString());
 }
@@ -67,27 +67,32 @@ void mostrarSesgos(Stats s){
 StringBuilder g=new StringBuilder();
 g.append("📊 DECENAS HISTORICO:\n");
 g.append(s.sesgoDecHist).append("\n");
-g.append("📊 DECENAS RECIENTE (1000):\n");
+g.append("📊 DECENAS RECIENTE:\n");
 g.append(s.sesgoDecRec).append("\n");
 g.append("📊 TERMINALES HISTORICO:\n");
 g.append(s.sesgoTermHist).append("\n");
-g.append("📊 TERMINALES RECIENTE (1000):\n");
+g.append("📊 TERMINALES RECIENTE:\n");
 g.append(s.sesgoTermRec);
 sesgos.setText(g.toString());
 }
 void mostrarCombinaciones(Stats s){
 StringBuilder c=new StringBuilder();
-c.append("🎯 COMBINACIONES DECENA x TERMINAL (reciente):\n");
+c.append("🎯 COMBINACIONES DECENA x TERMINAL (top 3 x top 3):\n");
+c.append("Decenas: ").append(s.top3Dec).append("\n");
+c.append("Terminales: ").append(s.top3Term).append("\n");
+c.append("Nueve numeros:\n");
 c.append(s.combinaciones);
 combinaciones.setText(c.toString());
 }
 void mostrarBacktesting(Stats s){
 StringBuilder b=new StringBuilder();
-b.append("📊 BACKTESTING (ultimos 100 sorteos del rango actual):\n");
-b.append(s.backtesting);
+b.append("📊 BACKTESTING REAL:\n");
+b.append("Calculado con primeros ").append(s.backtestTrainingSize).append(" sorteos\n");
+b.append("Validado con ultimos ").append(s.backtestTestingSize).append(" sorteos\n");
+b.append("Aciertos: ").append(s.backtestAciertos).append("\n");
+if(s.backtestTestingSize>0){int pct=(s.backtestAciertos*100)/s.backtestTestingSize;b.append("Porcentaje: ").append(pct).append("%");}
 backtesting.setText(b.toString());
 }
-int rangeDelDia(int dia){if(dia>=1&&dia<=5)return 0;if(dia>=6&&dia<=10)return 1;if(dia>=11&&dia<=15)return 2;if(dia>=16&&dia<=20)return 3;if(dia>=21&&dia<=25)return 4;return 5;}
 void dibujarTabla(Stats s){tabla.removeAllViews();tabla.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] headers={"Rango","Fijo","Corrido 1","Corrido 2","Decenas","Terminales"};
 String[] colores={"#FFFFFF","#1565C0","#2E7D32","#EF6C00","#6A1B9A","#F9A825"};
@@ -106,7 +111,7 @@ TextView celda(String txt,String bg,int colorTexto,boolean negrita){TextView tv=
 void verHistorial(){StringBuilder b=new StringBuilder();Cursor c=db.all();int n=0;while(c.moveToNext()&&n<100){b.append(c.getString(1)).append(" | ").append(c.getString(2)).append(" | ").append(c.getString(3)).append(" | ").append(c.getString(4)).append(" | ").append(c.getString(5)).append(" | ").append(c.getString(6)).append(" -- ");n++;}c.close();salida.setText("Primeros "+n+": "+b);}
 void exportar(){try{File f=new File(getExternalFilesDir(null),"historial.csv");FileWriter w=new FileWriter(f);w.write("Fecha,TN,Centena,Fijo,C1,C2\n");Cursor c=db.all();while(c.moveToNext())w.write(c.getString(1)+","+c.getString(2)+","+c.getString(3)+","+c.getString(4)+","+c.getString(5)+","+c.getString(6)+"\n");c.close();w.close();new AlertDialog.Builder(this).setTitle("Listo").setMessage(f.getAbsolutePath()).setPositiveButton("OK",null).show();}catch(Exception e){Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();}}
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");}public void onUpgrade(SQLiteDatabase d,int o,int n){}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}Cursor ultimos(int n){return getReadableDatabase().rawQuery("select * from draws order by id DESC limit "+n,null);}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");}public void onUpgrade(SQLiteDatabase d,int o,int n){}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
 static class Importer{
 static int importStream(DB db,InputStream in,String name)throws Exception{byte[] data=readAll(in);String lower=name.toLowerCase();if(isZip(data)){if(lower.endsWith(".xlsx"))return xlsx(db,data);if(lower.endsWith(".docx"))return docx(db,data);}return text(db,new String(data,StandardCharsets.UTF_8));}
 static boolean isZip(byte[] d){return d.length>4&&d[0]=='P'&&d[1]=='K';}
@@ -126,115 +131,103 @@ int[] acFijo=new int[6];int[] acC1=new int[6];int[] acC2=new int[6];int[] acDec=
 String top10CalientesHist="";String top10CalientesRec="";String robustosCalientes="";
 String top10FriosHist="";String top10FriosRec="";
 String sesgoDecHist="";String sesgoDecRec="";String sesgoTermHist="";String sesgoTermRec="";
-String combinaciones="";String backtesting="";
-int ultimoDia=0;
+String top3Dec="";String top3Term="";String combinaciones="";
+String backtesting="";int backtestAciertos=0;int backtestTrainingSize=0;int backtestTestingSize=0;
+int totalHist=0;int totalRec=0;
 static int range(String date){try{String[] q=date.split("[-/]");int day=Integer.parseInt(q[0]);if(day>=1&&day<=5)return 0;if(day<=10)return 1;if(day<=15)return 2;if(day<=20)return 3;if(day<=25)return 4;return 5;}catch(Exception e){return -1;}}
+static int rangeDelDia(int dia){if(dia>=1&&dia<=5)return 0;if(dia>=6&&dia<=10)return 1;if(dia>=11&&dia<=15)return 2;if(dia>=16&&dia<=20)return 3;if(dia>=21&&dia<=25)return 4;return 5;}
 static int num(String s){try{return Integer.parseInt(s);}catch(Exception e){return -1;}}
 static String[] topN(int[] cnt,int n,String fmt){int[] ix=new int[cnt.length];for(int i=0;i<cnt.length;i++)ix[i]=i;for(int i=0;i<cnt.length;i++)for(int j=i+1;j<cnt.length;j++)if(cnt[ix[j]]>cnt[ix[i]]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}String[] res=new String[n];for(int k=0;k<n;k++){if(fmt.equals("num"))res[k]=String.format("%02d",ix[k])+"("+cnt[ix[k]]+")";else res[k]=ix[k]+"("+cnt[ix[k]]+")";}return res;}
 static String[] bottomN(int[] cnt,int n,String fmt){int[] ix=new int[cnt.length];for(int i=0;i<cnt.length;i++)ix[i]=i;for(int i=0;i<cnt.length;i++)for(int j=i+1;j<cnt.length;j++)if(cnt[ix[j]]<cnt[ix[i]]){int t=ix[i];ix[i]=ix[j];ix[j]=t;}String[] res=new String[n];for(int k=0;k<n;k++){if(fmt.equals("num"))res[k]=String.format("%02d",ix[k])+"("+cnt[ix[k]]+")";else res[k]=ix[k]+"("+cnt[ix[k]]+")";}return res;}
-static int[] contarFijo(Cursor c){int[] cnt=new int[100];while(c.moveToNext()){int x=num(c.getString(4));if(x>=0&&x<100)cnt[x]++;}return cnt;}
-static int[] contarDecGlobal(Cursor c){int[] cnt=new int[10];while(c.moveToNext()){int x=num(c.getString(4));if(x>=0&&x<100)cnt[x/10]++;}return cnt;}
-static int[] contarTermGlobal(Cursor c){int[] cnt=new int[10];while(c.moveToNext()){int x=num(c.getString(4));if(x>=0&&x<100)cnt[x%10]++;}return cnt;}
-static String[] intersectar(String[] a,String[] b,int top){List<String> res=new ArrayList<>();for(String x:a){String num=x.split("\\(")[0];for(String y:b){if(y.startsWith(num+"(")){res.add(x);break;}}}while(res.size()<top)res.add("-");String[] r=new String[top];for(int i=0;i<top;i++)r[i]=res.get(i);return r;}
-static Stats calc(DB db){
+static String join(String[] arr){StringBuilder b=new StringBuilder();for(int i=0;i<arr.length;i++){b.append(arr[i]);if(i<arr.length-1)b.append(" ");}return b.toString();}
+static Stats calc(List<Draw> lista){
+Stats s=new Stats();
+s.totalHist=lista.size();
 int[][][] n=new int[6][3][100];
 int[][][] dec=new int[6][3][10];
 int[][][] term=new int[6][3][10];
-int total=0;
-Cursor c=db.all();
-while(c.moveToNext()){
-int r=range(c.getString(1));if(r<0)continue;
-String[] a={c.getString(4),c.getString(5),c.getString(6)};
-for(int k=0;k<3;k++){
-int x=num(a[k]);
-if(x>=0&&x<100){
-n[r][k][x]++;
-dec[r][k][x/10]++;
-term[r][k][x%10]++;
+int[] nHistFijo=new int[100];
+int[] decHist=new int[10];
+int[] termHist=new int[10];
+for(Draw d:lista){
+int r=range(d.date);if(r<0)continue;
+int fVal=num(d.f);int c1Val=num(d.c1);int c2Val=num(d.c2);
+s.sorteosPorRango[r]++;
+int[] vals={fVal,c1Val,c2Val};
+for(int k=0;k<3;k++){int x=vals[k];if(x>=0&&x<100){n[r][k][x]++;dec[r][k][x/10]++;term[r][k][x%10]++;if(k==0){nHistFijo[x]++;decHist[x/10]++;termHist[x%10]++;}}}
 }
-}
-total++;
-}
-c.close();
-Stats s=new Stats();
 for(int r=0;r<6;r++){
-String[] f=topN(n[r][0],3,"num");s.topsFijo[r]=f[0]+" "+f[1]+" "+f[2];
-String[] c1=topN(n[r][1],3,"num");s.topsC1[r]=c1[0]+" "+c1[1]+" "+c1[2];
-String[] c2=topN(n[r][2],3,"num");s.topsC2[r]=c2[0]+" "+c2[1]+" "+c2[2];
-String[] d=topN(dec[r][0],3,"dig");s.topsDec[r]=d[0]+" "+d[1]+" "+d[2];
-String[] t=topN(term[r][0],3,"dig");s.topsTerm[r]=t[0]+" "+t[1]+" "+t[2];
-String[] f5=topN(n[r][0],5,"num");s.top5Fijo[r]=f5[0]+" "+f5[1]+" "+f5[2]+" "+f5[3]+" "+f5[4];
-String[] c15=topN(n[r][1],5,"num");s.top5C1[r]=c15[0]+" "+c15[1]+" "+c15[2]+" "+c15[3]+" "+c15[4];
-String[] c25=topN(n[r][2],5,"num");s.top5C2[r]=c25[0]+" "+c25[1]+" "+c25[2]+" "+c25[3]+" "+c25[4];
-String[] d5=topN(dec[r][0],5,"dig");s.top5Dec[r]=d5[0]+" "+d5[1]+" "+d5[2]+" "+d5[3]+" "+d5[4];
-String[] t5=topN(term[r][0],5,"dig");s.top5Term[r]=t5[0]+" "+t5[1]+" "+t5[2]+" "+t5[3]+" "+t5[4];
+s.topsFijo[r]=join(topN(n[r][0],3,"num"));
+s.topsC1[r]=join(topN(n[r][1],3,"num"));
+s.topsC2[r]=join(topN(n[r][2],3,"num"));
+s.topsDec[r]=join(topN(dec[r][0],3,"dig"));
+s.topsTerm[r]=join(topN(term[r][0],3,"dig"));
+s.top5Fijo[r]=join(topN(n[r][0],5,"num"));
+s.top5C1[r]=join(topN(n[r][1],5,"num"));
+s.top5C2[r]=join(topN(n[r][2],5,"num"));
+s.top5Dec[r]=join(topN(dec[r][0],5,"dig"));
+s.top5Term[r]=join(topN(term[r][0],5,"dig"));
 }
-int[] nHistFijo=contarFijo(db.all());
-String[] calHist=topN(nHistFijo,10,"num");StringBuilder ch=new StringBuilder();for(int i=0;i<10;i++){ch.append(calHist[i]);if(i<9)ch.append(" ");}
-s.top10CalientesHist=ch.toString();
-String[] friHist=bottomN(nHistFijo,10,"num");StringBuilder fh=new StringBuilder();for(int i=0;i<10;i++){fh.append(friHist[i]);if(i<9)fh.append(" ");}
-s.top10FriosHist=fh.toString();
-int[] nRecFijo=contarFijo(db.ultimos(1000));
-String[] calRec=topN(nRecFijo,10,"num");StringBuilder cr=new StringBuilder();for(int i=0;i<10;i++){cr.append(calRec[i]);if(i<9)cr.append(" ");}
-s.top10CalientesRec=cr.toString();
-String[] friRec=bottomN(nRecFijo,10,"num");StringBuilder fr=new StringBuilder();for(int i=0;i<10;i++){fr.append(friRec[i]);if(i<9)fr.append(" ");}
-s.top10FriosRec=fr.toString();
-String[] rob=intersectar(calHist,calRec,10);StringBuilder rb=new StringBuilder();for(int i=0;i<rob.length;i++){rb.append(rob[i]);if(i<rob.length-1)rb.append(" ");}
-s.robustosCalientes=rb.toString();
-String[] decHist=topN(contarDecGlobal(db.all()),10,"dig");StringBuilder dh=new StringBuilder();for(int i=0;i<10;i++){dh.append(decHist[i]);if(i<9)dh.append(" ");}
-s.sesgoDecHist=dh.toString();
-String[] decRec=topN(contarDecGlobal(db.ultimos(1000)),10,"dig");StringBuilder dr=new StringBuilder();for(int i=0;i<10;i++){dr.append(decRec[i]);if(i<9)dr.append(" ");}
-s.sesgoDecRec=dr.toString();
-String[] termHist=topN(contarTermGlobal(db.all()),10,"dig");StringBuilder th=new StringBuilder();for(int i=0;i<10;i++){th.append(termHist[i]);if(i<9)th.append(" ");}
-s.sesgoTermHist=th.toString();
-String[] termRec=topN(contarTermGlobal(db.ultimos(1000)),10,"dig");StringBuilder tr=new StringBuilder();for(int i=0;i<10;i++){tr.append(termRec[i]);if(i<9)tr.append(" ");}
-s.sesgoTermRec=tr.toString();
-String top3Dec=decRec[0].split("\\(")[0]+","+decRec[1].split("\\(")[0]+","+decRec[2].split("\\(")[0];
-String top3Term=termRec[0].split("\\(")[0]+","+termRec[1].split("\\(")[0]+","+termRec[2].split("\\(")[0];
+s.top10CalientesHist=join(topN(nHistFijo,10,"num"));
+s.top10FriosHist=join(bottomN(nHistFijo,10,"num"));
+s.sesgoDecHist=join(topN(decHist,10,"dig"));
+s.sesgoTermHist=join(topN(termHist,10,"dig"));
+int tamRec=Math.min(1000,lista.size());
+s.totalRec=tamRec;
+List<Draw> recientes=new ArrayList<>();
+for(int i=lista.size()-tamRec;i<lista.size();i++)recientes.add(lista.get(i));
+int[] nRecFijo=new int[100];
+int[] decRec=new int[10];
+int[] termRec=new int[10];
+for(Draw d:recientes){int x=num(d.f);if(x>=0&&x<100){nRecFijo[x]++;decRec[x/10]++;termRec[x%10]++;}}
+s.top10CalientesRec=join(topN(nRecFijo,10,"num"));
+s.top10FriosRec=join(bottomN(nRecFijo,10,"num"));
+s.sesgoDecRec=join(topN(decRec,10,"dig"));
+s.sesgoTermRec=join(topN(termRec,10,"dig"));
+List<String> rob=new ArrayList<>();
+String[] calH=topN(nHistFijo,20,"num");String[] calR=topN(nRecFijo,20,"num");
+for(String h:calH){String nH=h.split("\\(")[0];for(String rr:calR){if(rr.startsWith(nH+"(")){rob.add(h);break;}}if(rob.size()>=10)break;}
+s.robustosCalientes=rob.isEmpty()?"(sin coincidencias)":join(rob.toArray(new String[0]));
+String[] decT=topN(decRec,3,"dig");String[] termT=topN(termRec,3,"dig");
+s.top3Dec=decT[0]+" "+decT[1]+" "+decT[2];
+s.top3Term=termT[0]+" "+termT[1]+" "+termT[2];
+String[] dTop={decT[0].split("\\(")[0],decT[1].split("\\(")[0],decT[2].split("\\(")[0]};
+String[] tTop={termT[0].split("\\(")[0],termT[1].split("\\(")[0],termT[2].split("\\(")[0]};
 StringBuilder cb=new StringBuilder();
-cb.append("Top 3 decenas: ").append(top3Dec).append("\n");
-cb.append("Top 3 terminales: ").append(top3Term).append("\n");
-cb.append("Nueve numeros:\n");
-String[] dTop={decRec[0].split("\\(")[0],decRec[1].split("\\(")[0],decRec[2].split("\\(")[0]};
-String[] tTop={termRec[0].split("\\(")[0],termRec[1].split("\\(")[0],termRec[2].split("\\(")[0]};
 for(String dd:dTop){for(String tt:tTop){cb.append(dd).append(tt).append("  ");}cb.append("\n");}
 s.combinaciones=cb.toString();
-int aciertosBT=0;int conteoBT=0;
-Cursor cbt=db.ultimos(300);
-while(cbt.moveToNext()){
-int r=range(cbt.getString(1));if(r<0)continue;
-if(r!=rangeDelDiaEstatico(Calendar.getInstance().get(Calendar.DAY_OF_MONTH)))continue;
-int fVal=num(cbt.getString(4));if(fVal<0)continue;
-String fStr=String.format("%02d",fVal);
-String dStr=fStr.substring(0,1);
-String tStr=fStr.substring(1,2);
-boolean match=false;
-for(String dd:dTop){if(dd.equals(dStr)){for(String tt:tTop){if(tt.equals(tStr)){match=true;break;}}}if(match)break;}
-if(match)aciertosBT++;
-conteoBT++;
+int tamTrain=Math.min(1000,lista.size()/2);
+int tamTest=Math.min(1000,lista.size()-tamTrain);
+List<Draw> train=new ArrayList<>();
+for(int i=0;i<tamTrain;i++)train.add(lista.get(i));
+int[] nTrainFijo=new int[100];
+int[] decTrain=new int[10];
+int[] termTrain=new int[10];
+for(Draw d:train){int x=num(d.f);if(x>=0&&x<100){nTrainFijo[x]++;decTrain[x/10]++;termTrain[x%10]++;}}
+String[] decTr=topN(decTrain,3,"dig");
+String[] termTr=topN(termTrain,3,"dig");
+List<String> combosTrain=new ArrayList<>();
+for(int i=0;i<3;i++){String dd=decTr[i].split("\\(")[0];for(int j=0;j<3;j++){String tt=termTr[j].split("\\(")[0];combosTrain.add(dd+tt);}}
+s.backtestTrainingSize=tamTrain;
+s.backtestTestingSize=tamTest;
+s.backtestAciertos=0;
+for(int i=lista.size()-tamTest;i<lista.size();i++){
+Draw d=lista.get(i);
+int x=num(d.f);
+if(x<0)continue;
+String dosDig=String.format("%02d",x);
+if(combosTrain.contains(dosDig))s.backtestAciertos++;
 }
-cbt.close();
-StringBuilder bt=new StringBuilder();
-bt.append("Analizados: ").append(conteoBT).append(" sorteos del rango actual\n");
-bt.append("Aciertos: ").append(aciertosBT).append("\n");
-if(conteoBT>0){int pct=(aciertosBT*100)/conteoBT;bt.append("Porcentaje: ").append(pct).append("%");}
-s.backtesting=bt.toString();
-Cursor c2=db.all();
-while(c2.moveToNext()){
-int r=range(c2.getString(1));if(r<0)continue;
-s.sorteosPorRango[r]++;
-int fVal=num(c2.getString(4)),c1Val=num(c2.getString(5)),c2Val=num(c2.getString(6));
-if(fVal>=0){if(fVal==numTop1(n[r][0]))s.acFijo[r]++;if(fVal/10==digTop1(dec[r][0]))s.acDec[r]++;if(fVal%10==digTop1(term[r][0]))s.acTerm[r]++;}
-if(c1Val>=0&&c1Val==numTop1(n[r][1]))s.acC1[r]++;
-if(c2Val>=0&&c2Val==numTop1(n[r][2]))s.acC2[r]++;
-int d=0;try{d=Integer.parseInt(c2.getString(1).split("[-/]")[0]);}catch(Exception ex){}
-if(d>s.ultimoDia)s.ultimoDia=d;
+for(Draw d:lista){int r=range(d.date);if(r<0)continue;int fVal=num(d.f);if(fVal<0)continue;
+if(fVal==numTop1(n[r][0]))s.acFijo[r]++;
+if(fVal/10==digTop1(dec[r][0]))s.acDec[r]++;
+if(fVal%10==digTop1(term[r][0]))s.acTerm[r]++;
+int c1Val=num(d.c1);if(c1Val>=0&&c1Val==numTop1(n[r][1]))s.acC1[r]++;
+int c2Val=num(d.c2);if(c2Val>=0&&c2Val==numTop1(n[r][2]))s.acC2[r]++;
 }
-c2.close();
 return s;
 }
 static int numTop1(int[] cnt){int best=0;for(int i=1;i<cnt.length;i++)if(cnt[i]>cnt[best])best=i;return best;}
 static int digTop1(int[] cnt){int best=0;for(int i=1;i<cnt.length;i++)if(cnt[i]>cnt[best])best=i;return best;}
-static int rangeDelDiaEstatico(int dia){if(dia>=1&&dia<=5)return 0;if(dia>=6&&dia<=10)return 1;if(dia>=11&&dia<=15)return 2;if(dia>=16&&dia<=20)return 3;if(dia>=21&&dia<=25)return 4;return 5;}
 }
 }
