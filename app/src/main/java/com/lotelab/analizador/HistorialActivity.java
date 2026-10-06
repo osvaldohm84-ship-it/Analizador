@@ -18,6 +18,7 @@ btnBuscar=findViewById(R.id.btnBuscar);
 btnLimpiar=findViewById(R.id.btnLimpiar);
 btnCargarMas=findViewById(R.id.btnCargarMas);
 btnOrden=findViewById(R.id.btnOrden);
+btnOrden.setText("↓ Recientes");
 new Thread(()->{
 todos=leerTodos();
 filtrados=new ArrayList<>(todos);
@@ -55,6 +56,7 @@ fila.addView(tvFecha);
 LinearLayout nums=new LinearLayout(this);
 nums.setOrientation(LinearLayout.HORIZONTAL);
 nums.setPadding(0,4,0,0);
+nums.addView(numTV("Cent: "+d.cent,"#4E342E"));
 nums.addView(numTV("F: "+d.f,"#1565C0"));
 nums.addView(numTV("C1: "+d.c1,"#2E7D32"));
 nums.addView(numTV("C2: "+d.c2,"#EF6C00"));
@@ -70,7 +72,7 @@ else btnCargarMas.setVisibility(View.GONE);
 TextView numTV(String txt,String color){
 TextView tv=new TextView(this);
 tv.setText(txt);
-tv.setTextSize(13);
+tv.setTextSize(12);
 tv.setTextColor(Color.parseColor(color));
 tv.setTypeface(null,Typeface.BOLD);
 LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1);
