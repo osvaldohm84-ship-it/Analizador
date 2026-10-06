@@ -18,12 +18,28 @@ btnSiguiente=findViewById(R.id.btnSiguiente);
 btnLupa=findViewById(R.id.btnLupa);
 new Thread(()->{
 todos=leerTodos();
+Collections.sort(todos,new Comparator<Draw>(){
+public int compare(Draw a,Draw b){return comparar(a.date,b.date);}
+});
 filtrados=new ArrayList<>(todos);
 runOnUiThread(()->mostrarPagina());
 }).start();
 btnAnterior.setOnClickListener(v->{if(paginaActual>0){paginaActual--;mostrarPagina();}});
 btnSiguiente.setOnClickListener(v->{int totalPag=(filtrados.size()+POR_PAGINA-1)/POR_PAGINA;if(paginaActual<totalPag-1){paginaActual++;mostrarPagina();}});
 btnLupa.setOnClickListener(v->abrirBusqueda());
+}
+int comparar(String f1,String f2){
+try{
+int[] a=parseFecha(f1);
+int[] b=parseFecha(f2);
+if(a[2]!=b[2])return a[2]-b[2];
+if(a[1]!=b[1])return a[1]-b[1];
+return a[0]-b[0];
+}catch(Exception e){return 0;}
+}
+int[] parseFecha(String f){
+String[] p=f.split("[-/]");
+return new int[]{Integer.parseInt(p[0]),Integer.parseInt(p[1]),Integer.parseInt(p[2])};
 }
 void abrirBusqueda(){
 LinearLayout l=new LinearLayout(this);
@@ -66,7 +82,7 @@ for(int i=inicio;i<fin;i++){
 Draw d=filtrados.get(total-1-i);
 listaHistorial.addView(crearFila(d));
 }
-infoPagina.setText("Pag: "+(paginaActual+1)+"/"+totalPag);
+infoPagina.setText("Pag: "+(paginaActual+1)+"/"+totalPag+" ("+total+" sorteos)");
 btnAnterior.setEnabled(paginaActual>0);
 btnSiguiente.setEnabled(paginaActual<totalPag-1);
 }
@@ -121,16 +137,13 @@ return tv;
 }
 String fechaBonita(String fecha){
 try{
-String[] p=fecha.split("[-/]");
-int dia=Integer.parseInt(p[0]);
-int mes=Integer.parseInt(p[1]);
-int anio=Integer.parseInt(p[2]);
+int[] p=parseFecha(fecha);
 String[] meses={"Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"};
 Calendar cal=Calendar.getInstance();
-cal.set(anio,mes-1,dia);
+cal.set(p[2],p[1]-1,p[0]);
 String[] dias={"Dom","Lun","Mar","Mié","Jue","Vie","Sáb"};
 String diaSem=dias[cal.get(Calendar.DAY_OF_WEEK)-1];
-return diaSem+". "+String.format("%02d",dia)+" "+meses[mes-1]+"/"+anio;
+return diaSem+". "+String.format("%02d",p[0])+" "+meses[p[1]-1]+"/"+p[2];
 }catch(Exception e){return fecha;}
 }
 TextView mensaje(String txt){
