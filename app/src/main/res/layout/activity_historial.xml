@@ -3,74 +3,46 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FAFAFA">
+    android:background="#EEEEEE">
 
 <LinearLayout
     android:orientation="horizontal"
     android:padding="8dp"
-    android:background="#00897B"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-
-<EditText
-    android:id="@+id/buscarFecha"
-    android:hint="Buscar fecha (dd-MM-yyyy)"
-    android:textSize="14sp"
-    android:background="#FFFFFF"
-    android:padding="8dp"
-    android:layout_weight="1"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnBuscar"
-    android:text="BUSCAR"
-    android:textSize="12sp"
-    android:backgroundTint="#8BC34A"
-    android:textColor="#FFFFFF"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnLimpiar"
-    android:text="X"
-    android:textSize="13sp"
-    android:backgroundTint="#607D8B"
-    android:textColor="#FFFFFF"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"/>
-
-</LinearLayout>
-
-<LinearLayout
-    android:orientation="horizontal"
-    android:padding="4dp"
-    android:background="#E0F2F1"
+    android:background="#1565C0"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
 <TextView
-    android:id="@+id/infoHistorial"
-    android:text=""
-    android:textSize="12sp"
+    android:id="@+id/tituloHist"
+    android:text="HISTORIAL"
+    android:textSize="18sp"
     android:textStyle="bold"
-    android:padding="4dp"
+    android:textColor="#FFFFFF"
     android:layout_weight="1"
     android:layout_width="0dp"
     android:layout_height="wrap_content"/>
 
 <Button
-    android:id="@+id/btnOrden"
-    android:text="↓ Recientes"
-    android:textSize="11sp"
-    android:backgroundTint="#00897B"
-    android:textColor="#FFFFFF"
-    android:paddingLeft="8dp"
-    android:paddingRight="8dp"
+    android:id="@+id/btnLupa"
+    android:text="🔍"
+    android:textSize="16sp"
+    android:backgroundTint="#FFFFFF"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"/>
+    android:layout_height="wrap_content"
+    android:minWidth="50dp"/>
 
 </LinearLayout>
+
+<TextView
+    android:id="@+id/filtroActivo"
+    android:text=""
+    android:textSize="12sp"
+    android:textStyle="bold"
+    android:padding="6dp"
+    android:background="#FFF9C4"
+    android:visibility="gone"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
 
 <ScrollView
     android:layout_width="match_parent"
@@ -86,13 +58,41 @@
 
 </ScrollView>
 
-<Button
-    android:id="@+id/btnCargarMas"
-    android:text="Cargar mas..."
-    android:textSize="14sp"
-    android:backgroundTint="#00897B"
-    android:textColor="#FFFFFF"
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="#1565C0"
+    android:gravity="center_vertical"
     android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<Button
+    android:id="@+id/btnAnterior"
+    android:text="◀"
+    android:textSize="16sp"
+    android:backgroundTint="#FFFFFF"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/infoPagina"
+    android:text="Pag: 1/1"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:gravity="center"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnSiguiente"
+    android:text="▶"
+    android:textSize="16sp"
+    android:backgroundTint="#FFFFFF"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
 
 </LinearLayout>
