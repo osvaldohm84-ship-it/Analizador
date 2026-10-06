@@ -10,7 +10,7 @@ resumenPred=findViewById(R.id.resumenPred);
 btnValidar=findViewById(R.id.btnValidar);
 btnBorrarTodas=findViewById(R.id.btnBorrarTodas);
 btnValidar.setOnClickListener(v->{new Thread(()->{validarTodas();runOnUiThread(()->cargarPredicciones());}).start();});
-btnBorrarTodas.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Confirmar").setMessage("¿Borrar todas las predicciones?").setPositiveButton("Si",(d,w)->{new Thread(()->{DBHelper db=new DBHelper(this);db.getWritableDatabase().execSQL("DELETE FROM predicciones");db.close();runOnUiThread(()->cargarPredicciones());}).start();}).setNegativeButton("No",null).show());
+btnBorrarTodas.setOnClickListener(v->new AlertDialog.Builder(this).setTitle("Confirmar").setMessage("Borrar todas las predicciones?").setPositiveButton("Si",(d,w)->{new Thread(()->{DBHelper db=new DBHelper(this);db.getWritableDatabase().execSQL("DELETE FROM predicciones");db.close();runOnUiThread(()->cargarPredicciones());}).start();}).setNegativeButton("No",null).show());
 cargarPredicciones();
 }
 void cargarPredicciones(){
@@ -21,16 +21,14 @@ int total=0,aciertos=0,fallos=0;
 while(c.moveToNext()){
 total++;
 int validada=c.getInt(18);
-StringBuilder sb=new StringBuilder();
 LinearLayout fila=new LinearLayout(this);
 fila.setOrientation(LinearLayout.VERTICAL);
 fila.setPadding(10,10,10,10);
-fila.setBackgroundColor(validada==1?(aciertosDeFila(c)?"#E8F5E9":"#FFEBEE"):Color.parseColor("#FFFFFF"));
+fila.setBackgroundColor(validada==1?Color.parseColor("#E8F5E9"):Color.parseColor("#FFFFFF"));
 TextView tvFecha=new TextView(this);
-String estado=validada==1?"✓ Validada":"⏳ Pendiente";
-tvFecha.setText("📅 "+c.getString(1)+"  |  Rango "+c.getString(2)+"  |  "+estado);
+String estado=validada==1?"Validada":"Pendiente";
+tvFecha.setText("Fecha: "+c.getString(1)+"  |  Rango "+c.getString(2)+"  |  "+estado);
 tvFecha.setTextSize(14);
-tvFecha.setTextStyle();
 tvFecha.setTextColor(Color.parseColor("#1A237E"));
 tvFecha.setTypeface(null,Typeface.BOLD);
 fila.addView(tvFecha);
@@ -66,7 +64,6 @@ fallos+=(5-ac);
 TextView tvAciertos=new TextView(this);
 tvAciertos.setText("Aciertos: "+ac+" de 5");
 tvAciertos.setTextSize(13);
-tvAciertos.setTextStyle();
 tvAciertos.setTextColor(Color.parseColor("#1B5E20"));
 tvAciertos.setTypeface(null,Typeface.BOLD);
 fila.addView(tvAciertos);
@@ -75,11 +72,8 @@ listaPredicciones.addView(fila);
 }
 c.close();db.close();
 if(total==0){resumenPred.setText("No hay predicciones guardadas");return;}
-int pendientes=total-(aciertos+fallos>0?contarValidadas():0);
 resumenPred.setText("Total: "+total+"  |  Aciertos: "+aciertos+"  |  Fallos: "+fallos+"  |  Tasa: "+(aciertos+fallos>0?(100*aciertos/(aciertos+fallos))+"%":"-"));
 }
-int contarValidadas(){DBHelper db=new DBHelper(this);Cursor c=db.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM predicciones WHERE validada=1",null);c.moveToFirst();int n=c.getInt(0);c.close();db.close();return n;}
-boolean aciertosDeFila(Cursor c){return c.getInt(13)+c.getInt(14)+c.getInt(15)+c.getInt(16)+c.getInt(17)>0;}
 void validarTodas(){
 DBHelper db=new DBHelper(this);
 Cursor preds=db.getReadableDatabase().rawQuery("SELECT id,fecha,top5Fijo,top5C1,top5C2,top5Dec,top5Term FROM predicciones WHERE validada=0",null);
