@@ -42,7 +42,12 @@ int total=filtrados.size();
 if(total==0){infoHistorial.setText("No hay sorteos para mostrar");btnCargarMas.setVisibility(View.GONE);return;}
 int limite=Math.min(mostrados+POR_PAGINA,total);
 for(int i=0;i<limite;i++){
-Draw d=descendente?filtrados.get(total-1-i):filtrados.get(i);
+Draw d;
+if(descendente){
+d=filtrados.get(i);
+}else{
+d=filtrados.get(total-1-i);
+}
 LinearLayout fila=new LinearLayout(this);
 fila.setOrientation(LinearLayout.VERTICAL);
 fila.setPadding(10,8,10,8);
@@ -82,11 +87,11 @@ return tv;
 List<Draw> leerTodos(){
 List<Draw> lista=new ArrayList<>();
 DB db=new DB(this);
-Cursor c=db.all();
+Cursor c=db.allDesc();
 while(c.moveToNext())lista.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));
 c.close();
 return lista;
 }
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}Cursor allDesc(){return getReadableDatabase().query("draws",null,null,null,null,null,"id DESC");}}
 }
