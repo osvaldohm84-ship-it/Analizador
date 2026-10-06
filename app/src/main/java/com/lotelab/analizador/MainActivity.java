@@ -1,19 +1,28 @@
 package com.lotelab.analizador;
 import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.net.Uri;import android.provider.OpenableColumns;import android.view.*;import android.widget.*;import android.graphics.*;import java.io.*;import java.nio.charset.StandardCharsets;import java.text.*;import java.util.*;import java.util.zip.*;import javax.xml.parsers.*;import org.w3c.dom.*;
 public class MainActivity extends Activity{
-DB db;TextView estado,salida,panelHoy,sugerencia,aciertos,calientes,frios,sesgos,combinaciones,backtesting;TableLayout tabla;static final int PICK=10;
+DB db;TextView estado,salida,panelHoy,sugerencia,aciertos,calientes,frios,sesgos,combinaciones,backtesting;TableLayout tabla;static final int PICK=10;static final int CREATE=20;
 @Override public void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_main);db=new DB(this);estado=findViewById(R.id.estado);salida=findViewById(R.id.salida);tabla=findViewById(R.id.tablaResultados);panelHoy=findViewById(R.id.panelHoy);sugerencia=findViewById(R.id.sugerencia);aciertos=findViewById(R.id.aciertos);calientes=findViewById(R.id.calientes);frios=findViewById(R.id.frios);sesgos=findViewById(R.id.sesgos);combinaciones=findViewById(R.id.combinaciones);backtesting=findViewById(R.id.backtesting);
 findViewById(R.id.btnImportar).setOnClickListener(v->pick());
 findViewById(R.id.btnNuevo).setOnClickListener(v->nuevo());
 findViewById(R.id.btnCalcular).setOnClickListener(v->calcular());
-findViewById(R.id.btnHistorial).setOnClickListener(v->verHistorial());
+findViewById(R.id.btnHistorial).setOnClickListener(v->startActivity(new Intent(this,HistorialActivity.class)));
 findViewById(R.id.btnResultados).setOnClickListener(v->calcular());
 findViewById(R.id.btnExportar).setOnClickListener(v->exportar());
 findViewById(R.id.btnBuscarDias).setOnClickListener(v->startActivity(new Intent(this,BuscarDiasActivity.class)));
 findViewById(R.id.btnBuscarNumeros).setOnClickListener(v->startActivity(new Intent(this,BuscarNumerosActivity.class)));
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
-@Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==PICK&&c==RESULT_OK&&d!=null){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()));}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
+@Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;
+if(r==PICK){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()));}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
+else if(r==CREATE){Uri u=d.getData();new Thread(()->{try{OutputStream out=getContentResolver().openOutputStream(u);if(out==null){runOnUiThread(()->Toast.makeText(this,"No se pudo abrir el archivo",Toast.LENGTH_LONG).show());return;}
+Writer w=new OutputStreamWriter(out,StandardCharsets.UTF_8);
+w.write("Fecha,TN,Centena,Fijo,C1,C2\n");
+Cursor cur=db.all();
+while(cur.moveToNext())w.write(cur.getString(1)+","+cur.getString(2)+","+cur.getString(3)+","+cur.getString(4)+","+cur.getString(5)+","+cur.getString(6)+"\n");
+cur.close();w.close();
+runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Listo").setMessage("Archivo CSV guardado correctamente").setPositiveButton("OK",null).show());
+}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
 String getName(Uri u){Cursor c=getContentResolver().query(u,null,null,null,null);if(c!=null){try{int x=c.getColumnIndex(OpenableColumns.DISPLAY_NAME);if(c.moveToFirst()&&x>=0)return c.getString(x);}finally{c.close();}}return "archivo";}
 void nuevo(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);String[] h={"Fecha dd-MM-yyyy","T/N","Centena","Fijo","Corrido 1","Corrido 2"};EditText[] e=new EditText[6];for(int i=0;i<6;i++){e[i]=new EditText(this);e[i].setHint(h[i]);l.addView(e[i]);}new AlertDialog.Builder(this).setTitle("Agregar sorteo").setView(l).setPositiveButton("Guardar",(x,w)->{try{db.insert(new Draw(e[0].getText().toString(),e[1].getText().toString(),e[2].getText().toString(),pad(e[3].getText().toString()),pad(e[4].getText().toString()),pad(e[5].getText().toString())));estado.setText("Total: "+db.count());}catch(Exception z){Toast.makeText(this,"Error: "+z.getMessage(),Toast.LENGTH_LONG).show();}}).setNegativeButton("Cancelar",null).show();}
 String pad(String s){s=s.trim();if(s.length()==1)s="0"+s;return s;}
@@ -107,7 +116,7 @@ fila.addView(celda(s.topsTerm[r],"#FFFFFF",Color.parseColor("#F57F17"),false));
 tabla.addView(fila);}}
 TextView celda(String txt,String bg,int colorTexto,boolean negrita){TextView tv=new TextView(this);tv.setText(txt);tv.setPadding(8,8,8,8);tv.setTextSize(11);tv.setTextColor(colorTexto);tv.setBackgroundColor(Color.parseColor(bg));if(negrita)tv.setTypeface(null,Typeface.BOLD);return tv;}
 void verHistorial(){StringBuilder b=new StringBuilder();Cursor c=db.all();int n=0;while(c.moveToNext()&&n<100){b.append(c.getString(1)).append(" | ").append(c.getString(2)).append(" | ").append(c.getString(3)).append(" | ").append(c.getString(4)).append(" | ").append(c.getString(5)).append(" | ").append(c.getString(6)).append(" -- ");n++;}c.close();salida.setText("Primeros "+n+": "+b);}
-void exportar(){try{File f=new File(getExternalFilesDir(null),"historial.csv");FileWriter w=new FileWriter(f);w.write("Fecha,TN,Centena,Fijo,C1,C2\n");Cursor c=db.all();while(c.moveToNext())w.write(c.getString(1)+","+c.getString(2)+","+c.getString(3)+","+c.getString(4)+","+c.getString(5)+","+c.getString(6)+"\n");c.close();w.close();new AlertDialog.Builder(this).setTitle("Listo").setMessage(f.getAbsolutePath()).setPositiveButton("OK",null).show();}catch(Exception e){Toast.makeText(this,e.getMessage(),Toast.LENGTH_LONG).show();}}
+void exportar(){Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("text/csv");intent.putExtra(Intent.EXTRA_TITLE,"historial_loteria.csv");startActivityForResult(intent,CREATE);}
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
 static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");}public void onUpgrade(SQLiteDatabase d,int o,int n){}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
 static class Importer{
