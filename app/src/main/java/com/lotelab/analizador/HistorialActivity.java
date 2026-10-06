@@ -63,7 +63,7 @@ if(paginaActual>=totalPag)paginaActual=totalPag-1;
 int inicio=paginaActual*POR_PAGINA;
 int fin=Math.min(inicio+POR_PAGINA,total);
 for(int i=inicio;i<fin;i++){
-Draw d=filtrados.get(i);
+Draw d=filtrados.get(total-1-i);
 listaHistorial.addView(crearFila(d));
 }
 infoPagina.setText("Pag: "+(paginaActual+1)+"/"+totalPag);
@@ -144,11 +144,11 @@ return tv;
 List<Draw> leerTodos(){
 List<Draw> lista=new ArrayList<>();
 DB db=new DB(this);
-Cursor c=db.allDesc();
+Cursor c=db.all();
 while(c.moveToNext())lista.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));
 c.close();
 return lista;
 }
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor allDesc(){return getReadableDatabase().query("draws",null,null,null,null,null,"id DESC");}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
 }
