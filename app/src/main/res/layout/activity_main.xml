@@ -77,6 +77,22 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
+<Button
+    android:id="@+id/btnGuardarPred"
+    android:text="💾 Guardar predicción de hoy"
+    android:backgroundTint="#E65100"
+    android:textColor="#FFFFFF"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnVerPred"
+    android:text="📊 Ver mis predicciones"
+    android:backgroundTint="#E65100"
+    android:textColor="#FFFFFF"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
 <TextView
     android:id="@+id/panelHoy"
     android:text=""
