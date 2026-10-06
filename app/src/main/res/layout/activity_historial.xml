@@ -24,8 +24,8 @@
 
 <Button
     android:id="@+id/btnBuscar"
-    android:text="Buscar"
-    android:textSize="13sp"
+    android:text="BUSCAR"
+    android:textSize="12sp"
     android:backgroundTint="#8BC34A"
     android:textColor="#FFFFFF"
     android:layout_width="wrap_content"
@@ -42,15 +42,35 @@
 
 </LinearLayout>
 
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="4dp"
+    android:background="#E0F2F1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
 <TextView
     android:id="@+id/infoHistorial"
     android:text=""
     android:textSize="12sp"
     android:textStyle="bold"
-    android:padding="8dp"
-    android:background="#E0F2F1"
-    android:layout_width="match_parent"
+    android:padding="4dp"
+    android:layout_weight="1"
+    android:layout_width="0dp"
     android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnOrden"
+    android:text="↓ Recientes"
+    android:textSize="11sp"
+    android:backgroundTint="#00897B"
+    android:textColor="#FFFFFF"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
 
 <ScrollView
     android:layout_width="match_parent"
