@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="#00897B"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<EditText
+    android:id="@+id/buscarFecha"
+    android:hint="Buscar fecha (dd-MM-yyyy)"
+    android:textSize="14sp"
+    android:background="#FFFFFF"
+    android:padding="8dp"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnBuscar"
+    android:text="Buscar"
+    android:textSize="13sp"
+    android:backgroundTint="#8BC34A"
+    android:textColor="#FFFFFF"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnLimpiar"
+    android:text="X"
+    android:textSize="13sp"
+    android:backgroundTint="#607D8B"
+    android:textColor="#FFFFFF"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+<TextView
+    android:id="@+id/infoHistorial"
+    android:text=""
+    android:textSize="12sp"
+    android:textStyle="bold"
+    android:padding="8dp"
+    android:background="#E0F2F1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
+<LinearLayout
+    android:id="@+id/listaHistorial"
+    android:orientation="vertical"
+    android:padding="4dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+</ScrollView>
+
+<Button
+    android:id="@+id/btnCargarMas"
+    android:text="Cargar mas..."
+    android:textSize="14sp"
+    android:backgroundTint="#00897B"
+    android:textColor="#FFFFFF"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
