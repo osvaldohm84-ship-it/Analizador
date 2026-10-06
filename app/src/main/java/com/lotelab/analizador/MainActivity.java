@@ -10,6 +10,7 @@ findViewById(R.id.btnHistorial).setOnClickListener(v->verHistorial());
 findViewById(R.id.btnResultados).setOnClickListener(v->calcular());
 findViewById(R.id.btnExportar).setOnClickListener(v->exportar());
 findViewById(R.id.btnBuscarDias).setOnClickListener(v->startActivity(new Intent(this,BuscarDiasActivity.class)));
+findViewById(R.id.btnBuscarNumeros).setOnClickListener(v->startActivity(new Intent(this,BuscarNumerosActivity.class)));
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(r==PICK&&c==RESULT_OK&&d!=null){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()));}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
@@ -52,7 +53,7 @@ c.append("🔥 CALIENTES HISTORICO (").append(s.totalHist).append(" sorteos):\n"
 c.append(s.top10CalientesHist).append("\n");
 c.append("🔥 CALIENTES RECIENTE (").append(s.totalRec).append(" sorteos):\n");
 c.append(s.top10CalientesRec).append("\n");
-c.append("⭐ ROBUSTOS (top 5 en ambos):\n");
+c.append("⭐ ROBUSTOS:\n");
 c.append(s.robustosCalientes);
 calientes.setText(c.toString());
 }
@@ -66,19 +67,15 @@ frios.setText(f.toString());
 }
 void mostrarSesgos(Stats s){
 StringBuilder g=new StringBuilder();
-g.append("📊 DECENAS HISTORICO:\n");
-g.append(s.sesgoDecHist).append("\n");
-g.append("📊 DECENAS RECIENTE:\n");
-g.append(s.sesgoDecRec).append("\n");
-g.append("📊 TERMINALES HISTORICO:\n");
-g.append(s.sesgoTermHist).append("\n");
-g.append("📊 TERMINALES RECIENTE:\n");
-g.append(s.sesgoTermRec);
+g.append("📊 DECENAS HISTORICO:\n").append(s.sesgoDecHist).append("\n");
+g.append("📊 DECENAS RECIENTE:\n").append(s.sesgoDecRec).append("\n");
+g.append("📊 TERMINALES HISTORICO:\n").append(s.sesgoTermHist).append("\n");
+g.append("📊 TERMINALES RECIENTE:\n").append(s.sesgoTermRec);
 sesgos.setText(g.toString());
 }
 void mostrarCombinaciones(Stats s){
 StringBuilder c=new StringBuilder();
-c.append("🎯 COMBINACIONES DECENA x TERMINAL (top 3 x top 3):\n");
+c.append("🎯 COMBINACIONES DECENA x TERMINAL:\n");
 c.append("Decenas: ").append(s.top3Dec).append("\n");
 c.append("Terminales: ").append(s.top3Term).append("\n");
 c.append("Nueve numeros:\n");
@@ -88,8 +85,8 @@ combinaciones.setText(c.toString());
 void mostrarBacktesting(Stats s){
 StringBuilder b=new StringBuilder();
 b.append("📊 BACKTESTING REAL:\n");
-b.append("Calculado con primeros ").append(s.backtestTrainingSize).append(" sorteos\n");
-b.append("Validado con ultimos ").append(s.backtestTestingSize).append(" sorteos\n");
+b.append("Train: primeros ").append(s.backtestTrainingSize).append(" sorteos\n");
+b.append("Test: ultimos ").append(s.backtestTestingSize).append(" sorteos\n");
 b.append("Aciertos: ").append(s.backtestAciertos).append("\n");
 if(s.backtestTestingSize>0){int pct=(s.backtestAciertos*100)/s.backtestTestingSize;b.append("Porcentaje: ").append(pct).append("%");}
 backtesting.setText(b.toString());
@@ -212,13 +209,7 @@ for(int i=0;i<3;i++){String dd=decTr[i].split("\\(")[0];for(int j=0;j<3;j++){Str
 s.backtestTrainingSize=tamTrain;
 s.backtestTestingSize=tamTest;
 s.backtestAciertos=0;
-for(int i=lista.size()-tamTest;i<lista.size();i++){
-Draw d=lista.get(i);
-int x=num(d.f);
-if(x<0)continue;
-String dosDig=String.format("%02d",x);
-if(combosTrain.contains(dosDig))s.backtestAciertos++;
-}
+for(int i=lista.size()-tamTest;i<lista.size();i++){Draw d=lista.get(i);int x=num(d.f);if(x<0)continue;String dosDig=String.format("%02d",x);if(combosTrain.contains(dosDig))s.backtestAciertos++;}
 for(Draw d:lista){int r=range(d.date);if(r<0)continue;int fVal=num(d.f);if(fVal<0)continue;
 if(fVal==numTop1(n[r][0]))s.acFijo[r]++;
 if(fVal/10==digTop1(dec[r][0]))s.acDec[r]++;
