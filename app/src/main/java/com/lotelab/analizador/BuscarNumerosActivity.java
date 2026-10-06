@@ -48,8 +48,9 @@ final int d=i;
 Button btn=new Button(this);
 btn.setText(String.valueOf(i));
 btn.setTextSize(14);
-btn.setLayoutParams(new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1));
-((LinearLayout.LayoutParams)btn.getLayoutParams()).setMargins(2,2,2,2);
+LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,LinearLayout.LayoutParams.WRAP_CONTENT,1);
+lp.setMargins(2,2,2,2);
+btn.setLayoutParams(lp);
 btn.setOnClickListener(v->{
 if(esDecena){if(decSel.contains(d))decSel.remove(d);else decSel.add(d);}
 else{if(termSel.contains(d))termSel.remove(d);else termSel.add(d);}
@@ -83,10 +84,11 @@ List<Draw> todos=leerTodos();
 StringBuilder res=new StringBuilder();
 if(!numSel.isEmpty()){
 List<Integer> l=new ArrayList<>(numSel);Collections.sort(l);
-res.append("=== NÚMEROS ===\n");
+res.append("=== NUMEROS ===\n");
 for(int n:l){
-int[][] cntF={new int[32][1]},cntC1=new int[32][1],cntC2=new int[32][1];
-int[][] cntF2={new int[32][1]},cntC12=new int[32][1],cntC22=new int[32][1];
+int[][] cntF=new int[32][1];
+int[][] cntC1=new int[32][1];
+int[][] cntC2=new int[32][1];
 for(Draw d:todos){
 int dia=extraerDia(d.date);if(dia<0||dia>31)continue;
 int f=parse(d.f),c1=parse(d.c1),c2=parse(d.c2);
@@ -94,17 +96,18 @@ if(f==n)cntF[dia][0]++;
 if(c1==n)cntC1[dia][0]++;
 if(c2==n)cntC2[dia][0]++;
 }
-res.append("Número ").append(String.format("%02d",n)).append(":\n");
-res.append("  Como FIJO: ").append(top10dias(cntF)).append("\n");
-res.append("  Como C1: ").append(top10dias(cntC1)).append("\n");
-res.append("  Como C2: ").append(top10dias(cntC2)).append("\n");
+res.append("Numero ").append(String.format("%02d",n)).append(":\n");
+res.append("  FIJO: ").append(top10dias(cntF)).append("\n");
+res.append("  C1: ").append(top10dias(cntC1)).append("\n");
+res.append("  C2: ").append(top10dias(cntC2)).append("\n");
 }
 }
 if(!decSel.isEmpty()){
 res.append("\n=== DECENAS ===\n");
 for(int d:decSel){
 int[] cnt=new int[32];
-int[] cntC1=new int[32];int[] cntC2=new int[32];
+int[] cntC1=new int[32];
+int[] cntC2=new int[32];
 for(Draw dr:todos){
 int dia=extraerDia(dr.date);if(dia<0||dia>31)continue;
 int f=parse(dr.f);if(f>=0&&f/10==d)cnt[dia]++;
@@ -121,7 +124,8 @@ if(!termSel.isEmpty()){
 res.append("\n=== TERMINALES ===\n");
 for(int t:termSel){
 int[] cnt=new int[32];
-int[] cntC1=new int[32];int[] cntC2=new int[32];
+int[] cntC1=new int[32];
+int[] cntC2=new int[32];
 for(Draw dr:todos){
 int dia=extraerDia(dr.date);if(dia<0||dia>31)continue;
 int f=parse(dr.f);if(f>=0&&f%10==t)cnt[dia]++;
