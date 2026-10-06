@@ -4,10 +4,11 @@ public class HistorialActivity extends Activity{
 LinearLayout listaHistorial;
 TextView infoHistorial;
 EditText buscarFecha;
-Button btnBuscar,btnLimpiar,btnCargarMas;
+Button btnBuscar,btnLimpiar,btnCargarMas,btnOrden;
 List<Draw> todos=new ArrayList<>();
 List<Draw> filtrados=new ArrayList<>();
 int mostrados=0;
+boolean descendente=true;
 static final int POR_PAGINA=1000;
 @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_historial);
 listaHistorial=findViewById(R.id.listaHistorial);
@@ -16,14 +17,16 @@ buscarFecha=findViewById(R.id.buscarFecha);
 btnBuscar=findViewById(R.id.btnBuscar);
 btnLimpiar=findViewById(R.id.btnLimpiar);
 btnCargarMas=findViewById(R.id.btnCargarMas);
+btnOrden=findViewById(R.id.btnOrden);
 new Thread(()->{
 todos=leerTodos();
 filtrados=new ArrayList<>(todos);
-runOnUiThread(()->{mostrarPagina();});
+runOnUiThread(()->mostrarPagina());
 }).start();
 btnBuscar.setOnClickListener(v->filtrar());
 btnLimpiar.setOnClickListener(v->{buscarFecha.setText("");filtrados=new ArrayList<>(todos);mostrados=0;mostrarPagina();});
 btnCargarMas.setOnClickListener(v->{mostrados+=POR_PAGINA;mostrarPagina();});
+btnOrden.setOnClickListener(v->{descendente=!descendente;btnOrden.setText(descendente?"↓ Recientes":"↑ Antiguos");mostrados=0;mostrarPagina();});
 }
 void filtrar(){
 String q=buscarFecha.getText().toString().trim();
@@ -38,7 +41,7 @@ int total=filtrados.size();
 if(total==0){infoHistorial.setText("No hay sorteos para mostrar");btnCargarMas.setVisibility(View.GONE);return;}
 int limite=Math.min(mostrados+POR_PAGINA,total);
 for(int i=0;i<limite;i++){
-Draw d=filtrados.get(i);
+Draw d=descendente?filtrados.get(total-1-i):filtrados.get(i);
 LinearLayout fila=new LinearLayout(this);
 fila.setOrientation(LinearLayout.VERTICAL);
 fila.setPadding(10,8,10,8);
@@ -83,5 +86,5 @@ c.close();
 return lista;
 }
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id DESC");}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,1);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
 }
