@@ -1,19 +1,22 @@
 package com.lotelab.analizador;
-import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.net.Uri;import android.provider.OpenableColumns;import android.view.*;import android.widget.*;import android.graphics.*;import java.io.*;import java.nio.charset.StandardCharsets;import java.text.*;import java.util.*;import java.util.zip.*;import javax.xml.parsers.*;import org.w3c.dom.*;
+import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.net.Uri;import android.provider.OpenableColumns;import android.view.*;import android.widget.*;import android.graphics.*;import androidx.drawerlayout.widget.DrawerLayout;import java.io.*;import java.nio.charset.StandardCharsets;import java.text.*;import java.util.*;import java.util.zip.*;import javax.xml.parsers.*;import org.w3c.dom.*;
 public class MainActivity extends Activity{
-DB db;TextView estado,salida,panelHoy,sugerencia,aciertos,calientes,frios,sesgos,centenas,combinaciones,backtesting;TableLayout tabla;static final int PICK=10;static final int CREATE=20;
+DB db;TextView estado,salida,panelHoy,sugerencia,aciertos,calientes,frios,sesgos,centenas,combinaciones,backtesting;TableLayout tabla;DrawerLayout drawerLayout;static final int PICK=10;static final int CREATE=20;
 @Override public void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_main);db=new DB(this);estado=findViewById(R.id.estado);salida=findViewById(R.id.salida);tabla=findViewById(R.id.tablaResultados);panelHoy=findViewById(R.id.panelHoy);sugerencia=findViewById(R.id.sugerencia);aciertos=findViewById(R.id.aciertos);calientes=findViewById(R.id.calientes);frios=findViewById(R.id.frios);sesgos=findViewById(R.id.sesgos);centenas=findViewById(R.id.centenas);combinaciones=findViewById(R.id.combinaciones);backtesting=findViewById(R.id.backtesting);
-findViewById(R.id.btnImportar).setOnClickListener(v->pick());
-findViewById(R.id.btnNuevo).setOnClickListener(v->nuevo());
-findViewById(R.id.btnCalcular).setOnClickListener(v->calcular());
-findViewById(R.id.btnHistorial).setOnClickListener(v->startActivity(new Intent(this,HistorialActivity.class)));
-findViewById(R.id.btnResultados).setOnClickListener(v->calcular());
-findViewById(R.id.btnExportar).setOnClickListener(v->exportar());
-findViewById(R.id.btnBuscarDias).setOnClickListener(v->startActivity(new Intent(this,BuscarDiasActivity.class)));
-findViewById(R.id.btnBuscarNumeros).setOnClickListener(v->startActivity(new Intent(this,BuscarNumerosActivity.class)));
-findViewById(R.id.btnGuardarPred).setOnClickListener(v->guardarPrediccion());
-findViewById(R.id.btnVerPred).setOnClickListener(v->startActivity(new Intent(this,PrediccionesActivity.class)));
-findViewById(R.id.btnEstadisticas).setOnClickListener(v->startActivity(new Intent(this,EstadisticasActivity.class)));
+drawerLayout=findViewById(R.id.drawerLayout);
+findViewById(R.id.btnMenu).setOnClickListener(v->drawerLayout.openDrawer(findViewById(R.id.menuLateral)));
+findViewById(R.id.menuInicio).setOnClickListener(v->{drawerLayout.closeDrawers();});
+findViewById(R.id.menuHistorial).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,HistorialActivity.class));});
+findViewById(R.id.menuBuscarDias).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,BuscarDiasActivity.class));});
+findViewById(R.id.menuBuscarNumeros).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,BuscarNumerosActivity.class));});
+findViewById(R.id.menuEstadisticas).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,EstadisticasActivity.class));});
+findViewById(R.id.menuPredicciones).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,PrediccionesActivity.class));});
+findViewById(R.id.menuGuardarPred).setOnClickListener(v->{drawerLayout.closeDrawers();guardarPrediccion();});
+findViewById(R.id.menuImportar).setOnClickListener(v->{drawerLayout.closeDrawers();pick();});
+findViewById(R.id.menuNuevo).setOnClickListener(v->{drawerLayout.closeDrawers();nuevo();});
+findViewById(R.id.menuExportar).setOnClickListener(v->{drawerLayout.closeDrawers();exportar();});
+findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers();calcular();});
+findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.0").setPositiveButton("OK",null).show();});
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;
