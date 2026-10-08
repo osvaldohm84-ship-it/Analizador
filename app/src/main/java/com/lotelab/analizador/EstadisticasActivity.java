@@ -13,6 +13,7 @@ int numSorteos=0;
 List<Est> ultimaLista=new ArrayList<>();
 List<Par> ultimaListaPar=new ArrayList<>();
 static final int CREATE_STATS=30;
+static final int TOP_PARLETS=100;
 static final String[] CATEGORIAS={"Números","Centenas","Decenas","Unidades","Dígitos","Parlets"};
 static final String[] FILTROS_POS={"Todas","Solo Fijo","Solo C1","Solo C2","Solo Centenas","Solo Corridos"};
 @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_estadisticas);
@@ -35,6 +36,7 @@ btnOrdenar.setOnClickListener(v->elegirOrden());
 btnVer.setOnClickListener(v->elegirCategoria());
 btnGuardarStats.setOnClickListener(v->guardarStats());
 }
+@Override protected void onDestroy(){super.onDestroy();if(todos!=null)todos.clear();if(ultimaLista!=null)ultimaLista.clear();if(ultimaListaPar!=null)ultimaListaPar.clear();}
 void elegirCategoria(){
 new AlertDialog.Builder(this).setTitle("Ver categoría:").setItems(CATEGORIAS,(d,w)->{
 categoria=w;
@@ -71,7 +73,9 @@ filtrados.add(d);
 }
 if(filtrados.isEmpty()){Toast.makeText(this,"No hay sorteos",Toast.LENGTH_SHORT).show();tablaStats.removeAllViews();contadorStats.setText("0");return;}
 numSorteos=filtrados.size();
+contadorStats.setText("Calculando...");
 new Thread(()->{
+try{
 switch(categoria){
 case 0:calcNumeros(filtrados);break;
 case 1:calcDigCat(filtrados,1);break;
@@ -79,6 +83,12 @@ case 2:calcDigCat(filtrados,2);break;
 case 3:calcDigCat(filtrados,3);break;
 case 4:calcDigTodos(filtrados);break;
 case 5:calcParlets(filtrados);break;
+}
+}catch(final Exception ex){
+runOnUiThread(()->{
+contadorStats.setText("Error: "+ex.getClass().getSimpleName());
+Toast.makeText(this,"Error: "+ex.getMessage(),Toast.LENGTH_LONG).show();
+});
 }
 }).start();
 }
@@ -99,25 +109,23 @@ ordenarEst(lista);
 ultimaLista=lista;
 runOnUiThread(()->dibujarNumeros(lista));
 }
-void calcDigCat(List<Draw> filt,int pos){
+void calcDigCat(List<Draw> filt,int posCat){
 int[] cnt=new int[10];int[] tar=new int[10];int[] noc=new int[10];
 List<Integer>[] posiciones=new List[10];
 for(int i=0;i<10;i++)posiciones[i]=new ArrayList<>();
 int p=0;
 for(Draw d:filt){
-String val=(pos==1)?d.cent:(pos==2)?d.f:d.c1;
-int x=parse(val);
-if(x<0||x>99)continue;
-int dig;
-if(pos==1)dig=x;
-else if(pos==2)dig=x;
-else dig=x;
-if(pos==1)dig=x;
-else dig=(pos==2)?x:x;
-if(pos==1)dig=x;
-else if(pos==2)dig=x;
-else dig=x;
-if(pos==1)dig=x;
+int dig=-1;
+if(posCat==1){
+int c=parse(d.cent);
+if(c>=0&&c<=9)dig=c;
+}else if(posCat==2){
+int fv=parse(d.f);
+if(fv>=0&&fv<=99)dig=fv/10;
+}else if(posCat==3){
+int fv=parse(d.f);
+if(fv>=0&&fv<=99)dig=fv%10;
+}
 if(dig<0||dig>9)continue;
 cnt[dig]++;posiciones[dig].add(p);
 if(d.tn.equals("T"))tar[dig]++;else noc[dig]++;
@@ -158,31 +166,59 @@ runOnUiThread(()->dibujarDigTodos(lista));
 }
 void calcParlets(List<Draw> filt){
 Map<String,int[]> mapa=new HashMap<>();
-Map<String,List<Integer>> posic=new HashMap<>();
 int p=0;
 for(Draw d:filt){
 int f=parse(d.f);int c1=parse(d.c1);int c2=parse(d.c2);
 if(f<0||c1<0||c2<0)continue;
 String[] pares={par(f,c1),par(f,c2),par(c1,c2)};
 for(String pp:pares){
-if(!mapa.containsKey(pp)){mapa.put(pp,new int[3]);posic.put(pp,new ArrayList<>());}
-mapa.get(pp)[0]++;posic.get(pp).add(p);
+if(!mapa.containsKey(pp))mapa.put(pp,new int[3]);
+mapa.get(pp)[0]++;
 if(d.tn.equals("T"))mapa.get(pp)[1]++;else mapa.get(pp)[2]++;
 }
 p++;
 }
+List<Map.Entry<String,int[]>> entries=new ArrayList<>(mapa.entrySet());
+Collections.sort(entries,(a,b)->b.getValue()[0]-a.getValue()[0]);
+int limite=Math.min(TOP_PARLETS,entries.size());
+Map<String,List<Integer>> posicTop=new HashMap<>();
+for(int i=0;i<limite;i++){
+String pp=entries.get(i).getKey();
+posicTop.put(pp,new ArrayList<>());
+}
+int pp2=0;
+for(Draw d:filt){
+int f=parse(d.f);int c1=parse(d.c1);int c2=parse(d.c2);
+if(f<0||c1<0||c2<0)continue;
+String[] pares={par(f,c1),par(f,c2),par(c1,c2)};
+for(String pp:pares){
+List<Integer> lst=posicTop.get(pp);
+if(lst!=null)lst.add(pp2);
+}
+pp2++;
+}
 List<Par> lista=new ArrayList<>();
-for(Map.Entry<String,int[]> e:mapa.entrySet()){
+for(int i=0;i<limite;i++){
+Map.Entry<String,int[]> e=entries.get(i);
 Par par=new Par(e.getKey(),e.getValue()[0],e.getValue()[1],e.getValue()[2]);
-par.estab=calcularEstab(posic.get(e.getKey()));
+par.estab=calcularEstab(posicTop.get(e.getKey()));
 lista.add(par);
 }
+for(int i=limite;i<entries.size();i++){
+Map.Entry<String,int[]> e=entries.get(i);
+Par par=new Par(e.getKey(),e.getValue()[0],e.getValue()[1],e.getValue()[2]);
+par.estab=-1;
+lista.add(par);
+}
+posicTop.clear();
 Collections.sort(lista,(a,b)->b.veces-a.veces);
 ultimaListaPar=lista;
-runOnUiThread(()->dibujarParlets(lista));
+final int total=lista.size();
+final int mostradosEstab=limite;
+runOnUiThread(()->dibujarParlets(lista,mostradosEstab,total));
 }
 double calcularEstab(List<Integer> posiciones){
-if(posiciones.size()<5)return -1;
+if(posiciones==null||posiciones.size()<5)return -1;
 List<Integer> intervalos=new ArrayList<>();
 for(int i=1;i<posiciones.size();i++)intervalos.add(posiciones.get(i)-posiciones.get(i-1));
 double suma=0;for(int x:intervalos)suma+=x;
@@ -191,7 +227,9 @@ if(prom==0)return -1;
 double varianza=0;for(int x:intervalos)varianza+=(x-prom)*(x-prom);
 varianza/=intervalos.size();
 double desv=Math.sqrt(varianza);
-return (desv/prom)*100;
+double res=(desv/prom)*100;
+if(Double.isNaN(res)||Double.isInfinite(res))return -1;
+return res;
 }
 String par(int a,int b){return a<=b?String.format("%02d-%02d",a,b):String.format("%02d-%02d",b,a);}
 void ordenarEst(List<Est> lista){
@@ -274,7 +312,7 @@ tablaStats.addView(fila);
 }
 contadorStats.setText(numSorteos+" sorteos");
 }
-void dibujarParlets(List<Par> lista){
+void dibujarParlets(List<Par> lista,int conEstab,int total){
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] h={"Pos","Parlet","Veces","Frec","Estab","Tar","Noc"};
 TableRow enc=new TableRow(this);
@@ -293,7 +331,7 @@ fila.addView(celda(String.valueOf(p.tar),bg,Color.parseColor("#F57F17"),false));
 fila.addView(celda(String.valueOf(p.noc),bg,Color.parseColor("#6A1B9A"),false));
 tablaStats.addView(fila);
 }
-contadorStats.setText(numSorteos+" sorteos | "+lista.size()+" parlets");
+contadorStats.setText(numSorteos+" sorteos | "+total+" parlets | Estab en Top "+conEstab);
 }
 void guardarStats(){
 if((categoria==5&&ultimaListaPar.isEmpty())||(categoria!=5&&ultimaLista.isEmpty())){Toast.makeText(this,"Primero analice",Toast.LENGTH_SHORT).show();return;}
