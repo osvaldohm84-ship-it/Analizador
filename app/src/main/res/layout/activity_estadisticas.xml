@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="#1565C0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:text="ESTADÍSTICAS"
+    android:textSize="18sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/contadorStats"
+    android:text=""
+    android:textSize="12sp"
+    android:textColor="#FFFFFF"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="6dp"
+    android:background="#E3F2FD"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:text="Desde:"
+    android:textSize="13sp"
+    android:textStyle="bold"
+    android:textColor="#0D47A1"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"/>
+
+<EditText
+    android:id="@+id/fechaDesde"
+    android:hint="01-01-2022"
+    android:textSize="12sp"
+    android:padding="4dp"
+    android:background="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="4dp"/>
+
+<TextView
+    android:text="Hasta:"
+    android:textSize="13sp"
+    android:textStyle="bold"
+    android:textColor="#0D47A1"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="6dp"
+    android:layout_gravity="center_vertical"/>
+
+<EditText
+    android:id="@+id/fechaHasta"
+    android:hint="06-10-2026"
+    android:textSize="12sp"
+    android:padding="4dp"
+    android:background="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="4dp"/>
+
+</LinearLayout>
+
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="4dp"
+    android:background="#E3F2FD"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<Button
+    android:id="@+id/btnAnalizar"
+    android:text="🔍 ANALIZAR"
+    android:textSize="13sp"
+    android:backgroundTint="#1565C0"
+    android:textColor="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnOrdenar"
+    android:text="↕ ORDENAR"
+    android:textSize="13sp"
+    android:backgroundTint="#00897B"
+    android:textColor="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="4dp"/>
+
+</LinearLayout>
+
+<HorizontalScrollView
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
+<TableLayout
+    android:id="@+id/tablaStats"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:stretchColumns="*"
+    android:background="#E0E0E0"
+    android:padding="1dp"/>
+
+</HorizontalScrollView>
+
+</LinearLayout>
