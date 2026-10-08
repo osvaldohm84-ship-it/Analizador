@@ -1,7 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
+
+<LinearLayout
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="#1565C0"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:id="@+id/btnMenu"
+    android:text="☰"
+    android:textSize="24sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:paddingStart="8dp"
+    android:paddingEnd="16dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/titulo"
+    android:text="ANALIZADOR DE LOTERIA"
+    android:textSize="16sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
 <LinearLayout
     android:orientation="vertical"
     android:padding="8dp"
@@ -9,95 +52,10 @@
     android:layout_height="wrap_content">
 
 <TextView
-    android:id="@+id/titulo"
-    android:text="ANALIZADOR DE LOTERIA"
-    android:textSize="22sp"
-    android:textStyle="bold"
-    android:paddingBottom="8dp"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<TextView
     android:id="@+id/estado"
     android:text="Preparando historial..."
-    android:textSize="14sp"
-    android:paddingBottom="8dp"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnImportar"
-    android:text="Importar historial"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnNuevo"
-    android:text="Agregar sorteo futuro"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnCalcular"
-    android:text="Calcular todo"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnHistorial"
-    android:text="Ver historial"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnResultados"
-    android:text="Ver resultados"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnExportar"
-    android:text="Exportar CSV"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnBuscarDias"
-    android:text="🔍 Buscar por días"
-    android:backgroundTint="#00897B"
-    android:textColor="#FFFFFF"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnBuscarNumeros"
-    android:text="🔢 Buscar por números"
-    android:backgroundTint="#00897B"
-    android:textColor="#FFFFFF"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnGuardarPred"
-    android:text="💾 Guardar predicción de hoy"
-    android:backgroundTint="#E65100"
-    android:textColor="#FFFFFF"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnVerPred"
-    android:text="📊 Ver mis predicciones"
-    android:backgroundTint="#E65100"
-    android:textColor="#FFFFFF"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"/>
-
-<Button
-    android:id="@+id/btnEstadisticas"
-    android:text="📈 Estadísticas por período"
-    android:backgroundTint="#6A1B9A"
-    android:textColor="#FFFFFF"
+    android:textSize="13sp"
+    android:paddingBottom="6dp"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
@@ -105,7 +63,7 @@
     android:id="@+id/panelHoy"
     android:text=""
     android:textSize="13sp"
-    android:paddingTop="12dp"
+    android:paddingTop="8dp"
     android:paddingBottom="8dp"
     android:paddingStart="8dp"
     android:paddingEnd="8dp"
@@ -233,4 +191,203 @@
     android:layout_height="wrap_content"/>
 
 </LinearLayout>
+
 </ScrollView>
+
+</LinearLayout>
+
+<LinearLayout
+    android:id="@+id/menuLateral"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:layout_gravity="start"
+    android:layout_width="280dp"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#1565C0"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:text="📊 ANALIZADOR"
+    android:textSize="18sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:text="Pick 3 · Pick 4 Florida"
+    android:textSize="13sp"
+    android:textColor="#E3F2FD"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:id="@+id/menuInicio"
+    android:text="🏠  Inicio"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#0D47A1"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:text="── CONSULTAS ──"
+    android:textSize="11sp"
+    android:textStyle="bold"
+    android:textColor="#757575"
+    android:paddingStart="14dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuHistorial"
+    android:text="📅  Ver historial"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuBuscarDias"
+    android:text="🔍  Buscar por días"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuBuscarNumeros"
+    android:text="🔢  Buscar por números"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:text="── ANÁLISIS ──"
+    android:textSize="11sp"
+    android:textStyle="bold"
+    android:textColor="#757575"
+    android:paddingStart="14dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuEstadisticas"
+    android:text="📈  Estadísticas"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuPredicciones"
+    android:text="🎯  Mis predicciones"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuGuardarPred"
+    android:text="💾  Guardar predicción de hoy"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:text="── DATOS ──"
+    android:textSize="11sp"
+    android:textStyle="bold"
+    android:textColor="#757575"
+    android:paddingStart="14dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuImportar"
+    android:text="📥  Importar historial"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuNuevo"
+    android:text="➕  Agregar sorteo"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuExportar"
+    android:text="📤  Exportar CSV"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuCalcular"
+    android:text="🔄  Calcular todo"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<View
+    android:layout_width="match_parent"
+    android:layout_height="1dp"
+    android:background="#E0E0E0"
+    android:layout_marginTop="8dp"/>
+
+<TextView
+    android:id="@+id/menuAcerca"
+    android:text="ℹ️  Acerca de"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#757575"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+</ScrollView>
+
+</LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>
