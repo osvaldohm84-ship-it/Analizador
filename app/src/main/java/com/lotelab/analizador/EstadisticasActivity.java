@@ -3,17 +3,21 @@ import android.app.*;import android.os.*;import android.content.*;import android
 public class EstadisticasActivity extends Activity{
 EditText fechaDesde,fechaHasta;
 Button btnAnalizar,btnOrdenar,btnVer,btnGuardarStats;
+Button btnPagAnt,btnPagSig,btnPagPrimera,btnPagUltima;
 TableLayout tablaStats;
-TextView contadorStats;
+TextView contadorStats,txtPagina;
+LinearLayout barraPaginacion;
 List<Draw> todos=new ArrayList<>();
 int categoria=0;
 int filtroPosicion=0;
 int ordenActual=2;
 int numSorteos=0;
+int paginaActual=1;
+static final int TOP_PARLETS=100;
+static final int PARLETS_POR_PAGINA=200;
 List<Est> ultimaLista=new ArrayList<>();
 List<Par> ultimaListaPar=new ArrayList<>();
 static final int CREATE_STATS=30;
-static final int TOP_PARLETS=100;
 static final String[] CATEGORIAS={"Números","Centenas","Decenas","Unidades","Dígitos","Parlets"};
 static final String[] FILTROS_POS={"Todas","Solo Fijo","Solo C1","Solo C2","Solo Centenas","Solo Corridos"};
 @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_estadisticas);
@@ -25,6 +29,12 @@ btnVer=findViewById(R.id.btnVer);
 btnGuardarStats=findViewById(R.id.btnGuardarStats);
 tablaStats=findViewById(R.id.tablaStats);
 contadorStats=findViewById(R.id.contadorStats);
+btnPagAnt=findViewById(R.id.btnPagAnt);
+btnPagSig=findViewById(R.id.btnPagSig);
+btnPagPrimera=findViewById(R.id.btnPagPrimera);
+btnPagUltima=findViewById(R.id.btnPagUltima);
+txtPagina=findViewById(R.id.txtPagina);
+barraPaginacion=findViewById(R.id.barraPaginacion);
 new Thread(()->{
 todos=leerTodos();
 runOnUiThread(()->{
@@ -35,11 +45,38 @@ btnAnalizar.setOnClickListener(v->analizar());
 btnOrdenar.setOnClickListener(v->elegirOrden());
 btnVer.setOnClickListener(v->elegirCategoria());
 btnGuardarStats.setOnClickListener(v->guardarStats());
+btnPagAnt.setOnClickListener(v->cambiarPagina(-1));
+btnPagSig.setOnClickListener(v->cambiarPagina(1));
+btnPagPrimera.setOnClickListener(v->irAPagina(1));
+btnPagUltima.setOnClickListener(v->{
+if(categoria!=5)return;
+int tp=(int)Math.ceil(ultimaListaPar.size()/(double)PARLETS_POR_PAGINA);
+if(tp<1)tp=1;
+irAPagina(tp);
+});
 }
 @Override protected void onDestroy(){super.onDestroy();if(todos!=null)todos.clear();if(ultimaLista!=null)ultimaLista.clear();if(ultimaListaPar!=null)ultimaListaPar.clear();}
+void cambiarPagina(int delta){
+if(categoria!=5)return;
+int totalPaginas=(int)Math.ceil(ultimaListaPar.size()/(double)PARLETS_POR_PAGINA);
+if(totalPaginas<1)totalPaginas=1;
+int nueva=paginaActual+delta;
+if(nueva<1||nueva>totalPaginas)return;
+paginaActual=nueva;
+dibujarParlets();
+}
+void irAPagina(int pag){
+if(categoria!=5)return;
+int totalPaginas=(int)Math.ceil(ultimaListaPar.size()/(double)PARLETS_POR_PAGINA);
+if(totalPaginas<1)totalPaginas=1;
+if(pag<1||pag>totalPaginas)return;
+paginaActual=pag;
+dibujarParlets();
+}
 void elegirCategoria(){
 new AlertDialog.Builder(this).setTitle("Ver categoría:").setItems(CATEGORIAS,(d,w)->{
 categoria=w;
+paginaActual=1;
 if(categoria==4){elegirFiltroPosicion();}else{filtroPosicion=0;btnVer.setText("Ver: "+CATEGORIAS[categoria]);analizar();}
 }).show();
 }
@@ -59,7 +96,7 @@ case 4:opciones=new String[]{"Dígito","Apariciones","Frecuencia","Estabilidad",
 case 5:opciones=new String[]{"Parlet","Apariciones","Frecuencia","Estabilidad","Tarde","Noche"};break;
 default:opciones=new String[]{"Pos"};break;
 }
-new AlertDialog.Builder(this).setTitle("Ordenar por:").setItems(opciones,(d,w)->{ordenActual=w;analizar();}).show();
+new AlertDialog.Builder(this).setTitle("Ordenar por:").setItems(opciones,(d,w)->{ordenActual=w;paginaActual=1;analizar();}).show();
 }
 void analizar(){
 if(todos.isEmpty()){Toast.makeText(this,"Cargando...",Toast.LENGTH_SHORT).show();return;}
@@ -74,6 +111,7 @@ filtrados.add(d);
 if(filtrados.isEmpty()){Toast.makeText(this,"No hay sorteos",Toast.LENGTH_SHORT).show();tablaStats.removeAllViews();contadorStats.setText("0");return;}
 numSorteos=filtrados.size();
 contadorStats.setText("Calculando...");
+barraPaginacion.setVisibility(View.GONE);
 new Thread(()->{
 try{
 switch(categoria){
@@ -116,15 +154,10 @@ for(int i=0;i<10;i++)posiciones[i]=new ArrayList<>();
 int p=0;
 for(Draw d:filt){
 int dig=-1;
-if(posCat==1){
-int c=parse(d.cent);
-if(c>=0&&c<=9)dig=c;
-}else if(posCat==2){
-int fv=parse(d.f);
-if(fv>=0&&fv<=99)dig=fv/10;
-}else if(posCat==3){
-int fv=parse(d.f);
-if(fv>=0&&fv<=99)dig=fv%10;
+switch(posCat){
+case 1:dig=parse(d.cent);break;
+case 2:int fij=parse(d.f);if(fij>=0)dig=fij/10;break;
+case 3:int fij2=parse(d.f);if(fij2>=0)dig=fij2%10;break;
 }
 if(dig<0||dig>9)continue;
 cnt[dig]++;posiciones[dig].add(p);
@@ -213,12 +246,10 @@ lista.add(par);
 posicTop.clear();
 Collections.sort(lista,(a,b)->b.veces-a.veces);
 ultimaListaPar=lista;
-final int total=lista.size();
-final int mostradosEstab=limite;
-runOnUiThread(()->dibujarParlets(lista,mostradosEstab,total));
+runOnUiThread(()->dibujarParlets());
 }
 double calcularEstab(List<Integer> posiciones){
-if(posiciones==null||posiciones.size()<5)return -1;
+if(posiciones==null||posiciones.size()<3)return -1;
 List<Integer> intervalos=new ArrayList<>();
 for(int i=1;i<posiciones.size();i++)intervalos.add(posiciones.get(i)-posiciones.get(i-1));
 double suma=0;for(int x:intervalos)suma+=x;
@@ -248,6 +279,7 @@ int frecComp(int a,int b){if(a==0&&b==0)return 0;if(a==0)return 1;if(b==0)return
 int colorEstab(double e){if(e<0)return Color.parseColor("#9E9E9E");if(e<20)return Color.parseColor("#1B5E20");if(e<50)return Color.parseColor("#F57F17");return Color.parseColor("#1565C0");}
 String estabTxt(double e){if(e<0)return "N/A";return String.format("%.1f",e);}
 void dibujarNumeros(List<Est> lista){
+barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] h={"Pos","#","Sal","Frec","Estab","Fij","Cor","Tar","Noc"};
 TableRow enc=new TableRow(this);
@@ -271,6 +303,7 @@ tablaStats.addView(fila);
 contadorStats.setText(numSorteos+" sorteos");
 }
 void dibujarDigCat(List<Est> lista){
+barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] h={"Pos","Díg","Sal","Frec","Estab","Tar","Noc","%"};
 TableRow enc=new TableRow(this);
@@ -293,6 +326,7 @@ tablaStats.addView(fila);
 contadorStats.setText(numSorteos+" sorteos");
 }
 void dibujarDigTodos(List<Est> lista){
+barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] h={"Pos","Díg","Veces","Frec","Estab","%"};
 TableRow enc=new TableRow(this);
@@ -312,16 +346,30 @@ tablaStats.addView(fila);
 }
 contadorStats.setText(numSorteos+" sorteos");
 }
-void dibujarParlets(List<Par> lista,int conEstab,int total){
+void dibujarParlets(){
+List<Par> lista=ultimaListaPar;
+int total=lista.size();
+int totalPaginas=(int)Math.ceil(total/(double)PARLETS_POR_PAGINA);
+if(totalPaginas<1)totalPaginas=1;
+if(paginaActual>totalPaginas)paginaActual=totalPaginas;
+if(paginaActual<1)paginaActual=1;
+int inicio=(paginaActual-1)*PARLETS_POR_PAGINA;
+int fin=Math.min(inicio+PARLETS_POR_PAGINA,total);
+barraPaginacion.setVisibility(totalPaginas>1?View.VISIBLE:View.GONE);
+txtPagina.setText("Pág: "+paginaActual+"/"+totalPaginas);
+btnPagPrimera.setEnabled(paginaActual>1);
+btnPagAnt.setEnabled(paginaActual>1);
+btnPagSig.setEnabled(paginaActual<totalPaginas);
+btnPagUltima.setEnabled(paginaActual<totalPaginas);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
 String[] h={"Pos","Parlet","Veces","Frec","Estab","Tar","Noc"};
 TableRow enc=new TableRow(this);
 for(String s:h)enc.addView(celda(s,"#1565C0",Color.WHITE,true));
 tablaStats.addView(enc);
-for(int i=0;i<lista.size();i++){
+for(int i=inicio;i<fin;i++){
 Par p=lista.get(i);
 TableRow fila=new TableRow(this);
-String bg=(i%2==0)?"#FFFFFF":"#F5F5F5";
+String bg=((i-inicio)%2==0)?"#FFFFFF":"#F5F5F5";
 fila.addView(celda(String.valueOf(i+1),bg,Color.parseColor("#1A237E"),true));
 fila.addView(celda(p.par,bg,Color.parseColor("#0D47A1"),true));
 fila.addView(celda(String.valueOf(p.veces),bg,Color.parseColor("#1B5E20"),false));
@@ -331,7 +379,7 @@ fila.addView(celda(String.valueOf(p.tar),bg,Color.parseColor("#F57F17"),false));
 fila.addView(celda(String.valueOf(p.noc),bg,Color.parseColor("#6A1B9A"),false));
 tablaStats.addView(fila);
 }
-contadorStats.setText(numSorteos+" sorteos | "+total+" parlets | Estab en Top "+conEstab);
+contadorStats.setText(numSorteos+" sorteos | "+total+" parlets");
 }
 void guardarStats(){
 if((categoria==5&&ultimaListaPar.isEmpty())||(categoria!=5&&ultimaLista.isEmpty())){Toast.makeText(this,"Primero analice",Toast.LENGTH_SHORT).show();return;}
