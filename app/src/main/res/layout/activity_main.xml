@@ -93,6 +93,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
+<Button
+    android:id="@+id/btnEstadisticas"
+    android:text="📈 Estadísticas por período"
+    android:backgroundTint="#6A1B9A"
+    android:textColor="#FFFFFF"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
 <TextView
     android:id="@+id/panelHoy"
     android:text=""
