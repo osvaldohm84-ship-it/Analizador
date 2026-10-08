@@ -13,6 +13,7 @@ findViewById(R.id.btnBuscarDias).setOnClickListener(v->startActivity(new Intent(
 findViewById(R.id.btnBuscarNumeros).setOnClickListener(v->startActivity(new Intent(this,BuscarNumerosActivity.class)));
 findViewById(R.id.btnGuardarPred).setOnClickListener(v->guardarPrediccion());
 findViewById(R.id.btnVerPred).setOnClickListener(v->startActivity(new Intent(this,PrediccionesActivity.class)));
+findViewById(R.id.btnEstadisticas).setOnClickListener(v->startActivity(new Intent(this,EstadisticasActivity.class)));
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;
@@ -50,7 +51,7 @@ v.put("top5Dec",s.top5Dec[rangoHoy]);
 v.put("top5Term",s.top5Term[rangoHoy]);
 aux.getWritableDatabase().insert("predicciones",null,v);
 aux.close();
-runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Guardado").setMessage("Prediccion guardada para: "+fechaHoy+"\nRango: "+rangoStr+"\n\nFijo: "+s.top5Fijo[rangoHoy]+"\nC1: "+s.top5C1[rangoHoy]+"\nC2: "+s.top5C2[rangoHoy]+"\nDec: "+s.top5Dec[rangoHoy]+"\nTerm: "+s.top5Term[rangoHoy]).setPositiveButton("OK",null).show());
+runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Guardado").setMessage("Prediccion guardada para: "+fechaHoy+"\nRango: "+rangoStr).setPositiveButton("OK",null).show());
 }catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}
 }).start();
 }
