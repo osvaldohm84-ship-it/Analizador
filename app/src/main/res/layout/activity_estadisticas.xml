@@ -163,13 +163,25 @@
     android:layout_height="wrap_content">
 
 <Button
+    android:id="@+id/btnPagPrimera"
+    android:text="🏠"
+    android:textSize="14sp"
+    android:backgroundTint="#0D47A1"
+    android:textColor="#FFFFFF"
+    android:minWidth="44dp"
+    android:padding="4dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+<Button
     android:id="@+id/btnPagAnt"
     android:text="◀"
     android:textSize="16sp"
     android:textStyle="bold"
     android:backgroundTint="#1565C0"
     android:textColor="#FFFFFF"
-    android:minWidth="48dp"
+    android:minWidth="44dp"
+    android:padding="4dp"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"/>
 
@@ -191,7 +203,19 @@
     android:textStyle="bold"
     android:backgroundTint="#1565C0"
     android:textColor="#FFFFFF"
-    android:minWidth="48dp"
+    android:minWidth="44dp"
+    android:padding="4dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnPagUltima"
+    android:text="⏭"
+    android:textSize="14sp"
+    android:backgroundTint="#0D47A1"
+    android:textColor="#FFFFFF"
+    android:minWidth="44dp"
+    android:padding="4dp"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"/>
 
