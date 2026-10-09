@@ -459,4 +459,7 @@ String fechaMax(){if(todos.isEmpty())return "";String m=todos.get(0).date;for(Dr
 int parse(String s){try{return Integer.parseInt(s);}catch(Exception e){return -1;}}
 List<Draw> leerTodos(){List<Draw> l=new ArrayList<>();DB db=new DB(this);Cursor c=db.all();while(c.moveToNext())l.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));c.close();return l;}
 static class Est{int id;int veces;int coFij;int coCor;int tar;int noc;int siSal=-1;int maySS=-1;int proSS=-1;double estab=-1;}
-static class Par{String par;int veces;int tar;int noc;double estab=-1;Par(String p,int v,int t,int n){par=p;veces=v;tar
+static class Par{String par;int veces;int tar;int noc;double estab=-1;Par(String p,int v,int t,int n){par=p;veces=v;tar=t;noc=n;}}
+static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
+}
