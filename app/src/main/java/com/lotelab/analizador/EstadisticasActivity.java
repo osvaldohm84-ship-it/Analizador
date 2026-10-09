@@ -2,7 +2,7 @@ package com.lotelab.analizador;
 import android.app.*;import android.os.*;import android.content.*;import android.database.*;import android.database.sqlite.*;import android.net.Uri;import android.view.*;import android.widget.*;import android.graphics.*;import java.io.*;import java.nio.charset.StandardCharsets;import java.util.*;
 public class EstadisticasActivity extends Activity{
 EditText fechaDesde,fechaHasta;
-Button btnAnalizar,btnOrdenar,btnVer,btnGuardarStats;
+Button btnAnalizar,btnOrdenar,btnVer,btnGuardarStats,btnFiltroFab;
 Button btnPagAnt,btnPagSig,btnPagPrimera,btnPagUltima;
 TableLayout tablaStats;
 TextView contadorStats,txtPagina;
@@ -13,8 +13,13 @@ int filtroPosicion=0;
 int ordenActual=2;
 int numSorteos=0;
 int paginaActual=1;
+String filtroTurno="T";
+boolean[] filtroDias={true,true,true,true,true,true,true};
+boolean[] filtroMeses={true,true,true,true,true,true,true,true,true,true,true,true};
 static final int TOP_PARLETS=100;
 static final int PARLETS_POR_PAGINA=200;
+static final String[] DIAS_NOMBRE={"Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"};
+static final String[] MESES_NOMBRE={"Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"};
 List<Est> ultimaLista=new ArrayList<>();
 List<Par> ultimaListaPar=new ArrayList<>();
 static final int CREATE_STATS=30;
@@ -27,6 +32,7 @@ btnAnalizar=findViewById(R.id.btnAnalizar);
 btnOrdenar=findViewById(R.id.btnOrdenar);
 btnVer=findViewById(R.id.btnVer);
 btnGuardarStats=findViewById(R.id.btnGuardarStats);
+btnFiltroFab=findViewById(R.id.btnFiltroFab);
 tablaStats=findViewById(R.id.tablaStats);
 contadorStats=findViewById(R.id.contadorStats);
 btnPagAnt=findViewById(R.id.btnPagAnt);
@@ -46,6 +52,7 @@ btnAnalizar.setOnClickListener(v->analizar());
 btnOrdenar.setOnClickListener(v->elegirOrden());
 btnVer.setOnClickListener(v->elegirCategoria());
 btnGuardarStats.setOnClickListener(v->guardarStats());
+btnFiltroFab.setOnClickListener(v->elegirFiltros());
 btnPagAnt.setOnClickListener(v->cambiarPagina(-1));
 btnPagSig.setOnClickListener(v->cambiarPagina(1));
 btnPagPrimera.setOnClickListener(v->irAPagina(1));
@@ -57,6 +64,58 @@ irAPagina(tp);
 });
 }
 @Override protected void onDestroy(){super.onDestroy();if(todos!=null)todos.clear();if(ultimaLista!=null)ultimaLista.clear();if(ultimaListaPar!=null)ultimaListaPar.clear();}
+void resetearFiltros(){
+filtroTurno="T";
+for(int i=0;i<7;i++)filtroDias[i]=true;
+for(int i=0;i<12;i++)filtroMeses[i]=true;
+}
+void elegirFiltros(){
+LinearLayout principal=new LinearLayout(this);
+principal.setOrientation(LinearLayout.VERTICAL);
+principal.setPadding(20,20,20,20);
+ScrollView scroll=new ScrollView(this);
+scroll.addView(principal);
+TextView tvTurno=new TextView(this);tvTurno.setText("TURNO:");tvTurno.setTextSize(13);tvTurno.setTextColor(Color.parseColor("#0D47A1"));tvTurno.setTypeface(null,Typeface.BOLD);tvTurno.setPadding(0,10,0,6);principal.addView(tvTurno);
+RadioGroup rg=new RadioGroup(this);rg.setOrientation(RadioGroup.HORIZONTAL);
+final RadioButton rbTodas=new RadioButton(this);rbTodas.setText("Todas");rbTodas.setTextSize(13);
+final RadioButton rbTarde=new RadioButton(this);rbTarde.setText("Tarde");rbTarde.setTextSize(13);
+final RadioButton rbNoche=new RadioButton(this);rbNoche.setText("Noche");rbNoche.setTextSize(13);
+if(filtroTurno.equals("T"))rbTodas.setChecked(true);
+else if(filtroTurno.equals("Tar"))rbTarde.setChecked(true);
+else if(filtroTurno.equals("Noc"))rbNoche.setChecked(true);
+rg.addView(rbTodas);rg.addView(rbTarde);rg.addView(rbNoche);principal.addView(rg);
+TextView tvDias=new TextView(this);tvDias.setText("DÍAS DE LA SEMANA:");tvDias.setTextSize(13);tvDias.setTextColor(Color.parseColor("#0D47A1"));tvDias.setTypeface(null,Typeface.BOLD);tvDias.setPadding(0,14,0,6);principal.addView(tvDias);
+final CheckBox[] cbDias=new CheckBox[7];
+LinearLayout contDias=new LinearLayout(this);contDias.setOrientation(LinearLayout.VERTICAL);
+for(int i=0;i<7;i++){
+cbDias[i]=new CheckBox(this);
+cbDias[i].setText(DIAS_NOMBRE[i]);
+cbDias[i].setTextSize(13);
+cbDias[i].setChecked(filtroDias[i]);
+contDias.addView(cbDias[i]);
+}
+principal.addView(contDias);
+TextView tvMeses=new TextView(this);tvMeses.setText("MESES DEL AÑO:");tvMeses.setTextSize(13);tvMeses.setTextColor(Color.parseColor("#0D47A1"));tvMeses.setTypeface(null,Typeface.BOLD);tvMeses.setPadding(0,14,0,6);principal.addView(tvMeses);
+final CheckBox[] cbMeses=new CheckBox[12];
+LinearLayout contMeses=new LinearLayout(this);contMeses.setOrientation(LinearLayout.VERTICAL);
+for(int i=0;i<12;i++){
+cbMeses[i]=new CheckBox(this);
+cbMeses[i].setText(MESES_NOMBRE[i]);
+cbMeses[i].setTextSize(13);
+cbMeses[i].setChecked(filtroMeses[i]);
+contMeses.addView(cbMeses[i]);
+}
+principal.addView(contMeses);
+new AlertDialog.Builder(this).setTitle("🎛️ Filtrar").setView(scroll).setPositiveButton("Aplicar",(d,w)->{
+if(rbTarde.isChecked())filtroTurno="Tar";
+else if(rbNoche.isChecked())filtroTurno="Noc";
+else filtroTurno="T";
+for(int i=0;i<7;i++)filtroDias[i]=cbDias[i].isChecked();
+for(int i=0;i<12;i++)filtroMeses[i]=cbMeses[i].isChecked();
+paginaActual=1;
+analizar();
+}).setNegativeButton("Cancelar",null).setNeutralButton("Reset",(d,w)->{resetearFiltros();analizar();}).show();
+}
 void cambiarPagina(int delta){
 if(categoria!=5)return;
 int totalPaginas=(int)Math.ceil(ultimaListaPar.size()/(double)PARLETS_POR_PAGINA);
@@ -78,6 +137,7 @@ void elegirCategoria(){
 new AlertDialog.Builder(this).setTitle("Seleccione cuál desea ver:").setCancelable(false).setItems(CATEGORIAS,(d,w)->{
 categoria=w;
 paginaActual=1;
+resetearFiltros();
 if(categoria==4){elegirFiltroPosicion();}else{filtroPosicion=0;btnVer.setText("Ver: "+CATEGORIAS[categoria]);analizar();}
 }).show();
 }
@@ -99,6 +159,36 @@ default:opciones=new String[]{"Pos"};break;
 }
 new AlertDialog.Builder(this).setTitle("Ordenar por:").setItems(opciones,(d,w)->{ordenActual=w;paginaActual=1;analizar();}).show();
 }
+boolean pasaFiltros(Draw d){
+int r=range(d.date);
+if(r<0)return false;
+if(!filtroDias[r])return false;
+int mes=mesDe(d.date);
+if(mes<0||!filtroMeses[mes])return false;
+if(filtroTurno.equals("Tar")&&!d.tn.equals("T"))return false;
+if(filtroTurno.equals("Noc")&&!d.tn.equals("N"))return false;
+return true;
+}
+int range(String date){
+try{
+String[] q=date.split("[-/]");
+int day=Integer.parseInt(q[0]);
+Calendar cal=Calendar.getInstance();
+int[] f=parseFecha(date);
+cal.set(f[2],f[1]-1,f[0]);
+int dow=cal.get(Calendar.DAY_OF_WEEK);
+if(dow==Calendar.MONDAY)return 0;
+if(dow==Calendar.TUESDAY)return 1;
+if(dow==Calendar.WEDNESDAY)return 2;
+if(dow==Calendar.THURSDAY)return 3;
+if(dow==Calendar.FRIDAY)return 4;
+if(dow==Calendar.SATURDAY)return 5;
+return 6;
+}catch(Exception e){return -1;}
+}
+int mesDe(String date){
+try{int[] f=parseFecha(date);return f[1]-1;}catch(Exception e){return -1;}
+}
 void analizar(){
 if(todos.isEmpty()){Toast.makeText(this,"Cargando...",Toast.LENGTH_SHORT).show();return;}
 String desde=fechaDesde.getText().toString().trim();
@@ -107,9 +197,10 @@ List<Draw> filtrados=new ArrayList<>();
 for(Draw d:todos){
 if(!desde.isEmpty()&&comparar(d.date,desde)<0)continue;
 if(!hasta.isEmpty()&&comparar(d.date,hasta)>0)continue;
+if(!pasaFiltros(d))continue;
 filtrados.add(d);
 }
-if(filtrados.isEmpty()){Toast.makeText(this,"No hay sorteos",Toast.LENGTH_SHORT).show();tablaStats.removeAllViews();contadorStats.setText("0");return;}
+if(filtrados.isEmpty()){Toast.makeText(this,"No hay sorteos con ese filtro",Toast.LENGTH_SHORT).show();tablaStats.removeAllViews();contadorStats.setText("0");return;}
 numSorteos=filtrados.size();
 contadorStats.setText("Calculando...");
 barraPaginacion.setVisibility(View.GONE);
