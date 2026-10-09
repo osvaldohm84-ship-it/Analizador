@@ -9,5 +9,6 @@
   <activity android:name=".HistorialActivity" android:screenOrientation="portrait" android:exported="false"/>
   <activity android:name=".PrediccionesActivity" android:screenOrientation="portrait" android:exported="false"/>
   <activity android:name=".EstadisticasActivity" android:screenOrientation="portrait" android:exported="false"/>
+  <activity android:name=".MejorasActivity" android:screenOrientation="portrait" android:exported="false"/>
  </application>
 </manifest>
