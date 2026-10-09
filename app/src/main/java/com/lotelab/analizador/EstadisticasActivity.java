@@ -13,7 +13,6 @@ int filtroPosicion=0;
 int ordenActual=2;
 int numSorteos=0;
 int paginaActual=1;
-boolean esperandoCategoria=true;
 static final int TOP_PARLETS=100;
 static final int PARLETS_POR_PAGINA=200;
 List<Est> ultimaLista=new ArrayList<>();
@@ -76,11 +75,9 @@ paginaActual=pag;
 dibujarParlets();
 }
 void elegirCategoria(){
-esperandoCategoria=true;
 new AlertDialog.Builder(this).setTitle("Seleccione cuál desea ver:").setCancelable(false).setItems(CATEGORIAS,(d,w)->{
 categoria=w;
 paginaActual=1;
-esperandoCategoria=false;
 if(categoria==4){elegirFiltroPosicion();}else{filtroPosicion=0;btnVer.setText("Ver: "+CATEGORIAS[categoria]);analizar();}
 }).show();
 }
@@ -94,9 +91,9 @@ analizar();
 void elegirOrden(){
 String[] opciones;
 switch(categoria){
-case 0:opciones=new String[]{"Número","Salidas","Frecuencia","Estabilidad","Como Fijo","Como Corrido","Tarde","Noche"};break;
-case 1:case 2:case 3:opciones=new String[]{"Dígito","Salidas","Frecuencia","Estabilidad","Tarde","Noche","Porcentaje"};break;
-case 4:opciones=new String[]{"Dígito","Apariciones","Frecuencia","Estabilidad","Porcentaje"};break;
+case 0:opciones=new String[]{"Número","Salidas","Frecuencia","Estabilidad","Como Fijo","Como Corrido","Tarde","Noche","Sin salir","Mayor sin salir","Promedio sin salir"};break;
+case 1:case 2:case 3:opciones=new String[]{"Dígito","Salidas","Frecuencia","Estabilidad","Tarde","Noche","Porcentaje","Sin salir","Mayor sin salir","Promedio sin salir"};break;
+case 4:opciones=new String[]{"Dígito","Apariciones","Frecuencia","Estabilidad","Porcentaje","Sin salir","Mayor sin salir","Promedio sin salir"};break;
 case 5:opciones=new String[]{"Parlet","Apariciones","Frecuencia","Estabilidad","Tarde","Noche"};break;
 default:opciones=new String[]{"Pos"};break;
 }
@@ -145,7 +142,7 @@ int[] vals={parse(d.f),parse(d.c1),parse(d.c2)};
 for(int k=0;k<3;k++){int x=vals[k];if(x>=0&&x<100){ests[x].veces++;if(k==0)ests[x].coFij++;else ests[x].coCor++;if(d.tn.equals("T"))ests[x].tar++;else ests[x].noc++;posiciones[x].add(pos);}}
 pos++;
 }
-for(int i=0;i<100;i++)ests[i].estab=calcularEstab(posiciones[i]);
+for(int i=0;i<100;i++){calcularSS(ests[i],posiciones[i],filt.size());ests[i].estab=calcularEstab(posiciones[i]);}
 List<Est> lista=new ArrayList<>(Arrays.asList(ests));
 ordenarEst(lista);
 ultimaLista=lista;
@@ -169,7 +166,7 @@ if(d.tn.equals("T"))tar[dig]++;else noc[dig]++;
 p++;
 }
 List<Est> lista=new ArrayList<>();
-for(int i=0;i<10;i++){Est e=new Est();e.id=i;e.veces=cnt[i];e.tar=tar[i];e.noc=noc[i];e.estab=calcularEstab(posiciones[i]);lista.add(e);}
+for(int i=0;i<10;i++){Est e=new Est();e.id=i;e.veces=cnt[i];e.tar=tar[i];e.noc=noc[i];calcularSS(e,posiciones[i],filt.size());e.estab=calcularEstab(posiciones[i]);lista.add(e);}
 ordenarEst(lista);
 ultimaLista=lista;
 runOnUiThread(()->dibujarDigCat(lista));
@@ -196,7 +193,7 @@ for(char c:v.toCharArray()){if(Character.isDigit(c)){int dig=c-'0';cnt[dig]++;po
 p++;
 }
 List<Est> lista=new ArrayList<>();
-for(int i=0;i<10;i++){Est e=new Est();e.id=i;e.veces=cnt[i];e.estab=calcularEstab(posiciones[i]);lista.add(e);}
+for(int i=0;i<10;i++){Est e=new Est();e.id=i;e.veces=cnt[i];calcularSS(e,posiciones[i],filt.size());e.estab=calcularEstab(posiciones[i]);lista.add(e);}
 ordenarEst(lista);
 ultimaLista=lista;
 runOnUiThread(()->dibujarDigTodos(lista));
@@ -252,6 +249,24 @@ ordenarPar(lista);
 ultimaListaPar=lista;
 runOnUiThread(()->dibujarParlets());
 }
+void calcularSS(Est e,List<Integer> posiciones,int totalSorteos){
+if(posiciones==null||posiciones.isEmpty()){e.siSal=-1;e.maySS=-1;e.proSS=-1;return;}
+e.siSal=totalSorteos-posiciones.get(posiciones.size()-1)-1;
+int may=0;long suma=0;
+int prev=0;
+for(int i=0;i<posiciones.size();i++){
+int actual=posiciones.get(i);
+int gap=actual-prev;
+if(gap>may)may=gap;
+suma+=gap;
+prev=actual;
+}
+int ultimoGap=totalSorteos-prev;
+if(ultimoGap>may)may=ultimoGap;
+suma+=ultimoGap;
+e.maySS=may;
+e.proSS=(int)(suma/posiciones.size());
+}
 void ordenarPar(List<Par> lista){
 switch(ordenActual){
 case 0:Collections.sort(lista,(a,b)->a.par.compareTo(b.par));break;
@@ -287,15 +302,19 @@ case 4:Collections.sort(lista,(a,b)->b.coFij-a.coFij);break;
 case 5:Collections.sort(lista,(a,b)->b.coCor-a.coCor);break;
 case 6:Collections.sort(lista,(a,b)->b.tar-a.tar);break;
 case 7:Collections.sort(lista,(a,b)->b.noc-a.noc);break;
+case 8:Collections.sort(lista,(a,b)->(a.siSal<0?99999:a.siSal)-(b.siSal<0?99999:b.siSal));break;
+case 9:Collections.sort(lista,(a,b)->(b.maySS<0?-1:b.maySS)-(a.maySS<0?-1:a.maySS));break;
+case 10:Collections.sort(lista,(a,b)->(a.proSS<0?99999:a.proSS)-(b.proSS<0?99999:b.proSS));break;
 }
 }
 int frecComp(int a,int b){if(a==0&&b==0)return 0;if(a==0)return 1;if(b==0)return -1;return b-a;}
 int colorEstab(double e){if(e<0)return Color.parseColor("#9E9E9E");if(e<20)return Color.parseColor("#1B5E20");if(e<50)return Color.parseColor("#F57F17");return Color.parseColor("#1565C0");}
 String estabTxt(double e){if(e<0)return "N/A";return String.format("%.1f",e);}
+String ssTxt(int v){if(v<0)return "-";return String.valueOf(v);}
 void dibujarNumeros(List<Est> lista){
 barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
-String[] h={"Pos","#","Sal","Frec","Estab","Fij","Cor","Tar","Noc"};
+String[] h={"Pos","#","Sal","Frec","Estab","Fij","Cor","Tar","Noc","SiSal","MaySS","ProSS"};
 TableRow enc=new TableRow(this);
 for(String s:h)enc.addView(celda(s,"#1565C0",Color.WHITE,true));
 tablaStats.addView(enc);
@@ -312,6 +331,9 @@ fila.addView(celda(String.valueOf(e.coFij),bg,Color.parseColor("#2E7D32"),false)
 fila.addView(celda(String.valueOf(e.coCor),bg,Color.parseColor("#E65100"),false));
 fila.addView(celda(String.valueOf(e.tar),bg,Color.parseColor("#F57F17"),false));
 fila.addView(celda(String.valueOf(e.noc),bg,Color.parseColor("#6A1B9A"),false));
+fila.addView(celda(ssTxt(e.siSal),bg,Color.parseColor("#C62828"),false));
+fila.addView(celda(ssTxt(e.maySS),bg,Color.parseColor("#D84315"),false));
+fila.addView(celda(ssTxt(e.proSS),bg,Color.parseColor("#AD1457"),false));
 tablaStats.addView(fila);
 }
 contadorStats.setText(numSorteos+" sorteos");
@@ -319,7 +341,7 @@ contadorStats.setText(numSorteos+" sorteos");
 void dibujarDigCat(List<Est> lista){
 barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
-String[] h={"Pos","Díg","Sal","Frec","Estab","Tar","Noc","%"};
+String[] h={"Pos","Díg","Sal","Frec","Estab","Tar","Noc","%","SiSal","MaySS","ProSS"};
 TableRow enc=new TableRow(this);
 for(String s:h)enc.addView(celda(s,"#1565C0",Color.WHITE,true));
 tablaStats.addView(enc);
@@ -335,6 +357,9 @@ TextView tvEst=new TextView(this);tvEst.setText(estabTxt(e.estab));tvEst.setPadd
 fila.addView(celda(String.valueOf(e.tar),bg,Color.parseColor("#F57F17"),false));
 fila.addView(celda(String.valueOf(e.noc),bg,Color.parseColor("#6A1B9A"),false));
 fila.addView(celda(pct(e.veces),bg,Color.parseColor("#1B5E20"),false));
+fila.addView(celda(ssTxt(e.siSal),bg,Color.parseColor("#C62828"),false));
+fila.addView(celda(ssTxt(e.maySS),bg,Color.parseColor("#D84315"),false));
+fila.addView(celda(ssTxt(e.proSS),bg,Color.parseColor("#AD1457"),false));
 tablaStats.addView(fila);
 }
 contadorStats.setText(numSorteos+" sorteos");
@@ -342,7 +367,7 @@ contadorStats.setText(numSorteos+" sorteos");
 void dibujarDigTodos(List<Est> lista){
 barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
-String[] h={"Pos","Díg","Veces","Frec","Estab","%"};
+String[] h={"Pos","Díg","Veces","Frec","Estab","%","SiSal","MaySS","ProSS"};
 TableRow enc=new TableRow(this);
 for(String s:h)enc.addView(celda(s,"#1565C0",Color.WHITE,true));
 tablaStats.addView(enc);
@@ -356,6 +381,9 @@ fila.addView(celda(String.valueOf(e.veces),bg,Color.parseColor("#1B5E20"),false)
 fila.addView(celda(frec(e.veces),bg,Color.parseColor("#4A148C"),false));
 TextView tvEst=new TextView(this);tvEst.setText(estabTxt(e.estab));tvEst.setPadding(8,6,8,6);tvEst.setTextSize(11);tvEst.setTextColor(colorEstab(e.estab));tvEst.setBackgroundColor(Color.parseColor(bg));tvEst.setGravity(Gravity.CENTER);tvEst.setTypeface(null,Typeface.BOLD);fila.addView(tvEst);
 fila.addView(celda(pct(e.veces),bg,Color.parseColor("#6A1B9A"),false));
+fila.addView(celda(ssTxt(e.siSal),bg,Color.parseColor("#C62828"),false));
+fila.addView(celda(ssTxt(e.maySS),bg,Color.parseColor("#D84315"),false));
+fila.addView(celda(ssTxt(e.proSS),bg,Color.parseColor("#AD1457"),false));
 tablaStats.addView(fila);
 }
 contadorStats.setText(numSorteos+" sorteos");
@@ -413,8 +441,8 @@ if(categoria==5){
 w.write("Pos,Parlet,Veces,Frecuencia,Estab,Tarde,Noche\n");
 for(int i=0;i<ultimaListaPar.size();i++){Par p=ultimaListaPar.get(i);w.write((i+1)+","+p.par+","+p.veces+","+frec(p.veces)+","+estabTxt(p.estab)+","+p.tar+","+p.noc+"\n");}
 }else{
-w.write("Pos,Valor,Salidas,Frecuencia,Estab\n");
-for(int i=0;i<ultimaLista.size();i++){Est e=ultimaLista.get(i);w.write((i+1)+","+e.id+","+e.veces+","+frec(e.veces)+","+estabTxt(e.estab)+"\n");}
+w.write("Pos,Valor,Salidas,Frecuencia,Estab,SiSal,MaySS,ProSS\n");
+for(int i=0;i<ultimaLista.size();i++){Est e=ultimaLista.get(i);w.write((i+1)+","+e.id+","+e.veces+","+frec(e.veces)+","+estabTxt(e.estab)+","+ssTxt(e.siSal)+","+ssTxt(e.maySS)+","+ssTxt(e.proSS)+"\n");}
 }
 w.close();
 runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Listo").setMessage("Estadisticas guardadas").setPositiveButton("OK",null).show());
@@ -430,8 +458,5 @@ String fechaMin(){if(todos.isEmpty())return "";String m=todos.get(0).date;for(Dr
 String fechaMax(){if(todos.isEmpty())return "";String m=todos.get(0).date;for(Draw d:todos){if(comparar(d.date,m)>0)m=d.date;}return m;}
 int parse(String s){try{return Integer.parseInt(s);}catch(Exception e){return -1;}}
 List<Draw> leerTodos(){List<Draw> l=new ArrayList<>();DB db=new DB(this);Cursor c=db.all();while(c.moveToNext())l.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));c.close();return l;}
-static class Est{int id;int veces;int coFij;int coCor;int tar;int noc;double estab=-1;}
-static class Par{String par;int veces;int tar;int noc;double estab=-1;Par(String p,int v,int t,int n){par=p;veces=v;tar=t;noc=n;}}
-static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
-}
+static class Est{int id;int veces;int coFij;int coCor;int tar;int noc;int siSal=-1;int maySS=-1;int proSS=-1;double estab=-1;}
+static class Par{String par;int veces;int tar;int noc;double estab=-1;Par(String p,int v,int t,int n){par=p;veces=v;tar
