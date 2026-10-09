@@ -13,6 +13,7 @@ int filtroPosicion=0;
 int ordenActual=2;
 int numSorteos=0;
 int paginaActual=1;
+boolean esperandoCategoria=true;
 static final int TOP_PARLETS=100;
 static final int PARLETS_POR_PAGINA=200;
 List<Est> ultimaLista=new ArrayList<>();
@@ -39,6 +40,7 @@ new Thread(()->{
 todos=leerTodos();
 runOnUiThread(()->{
 if(todos.size()>0){fechaDesde.setText(fechaMin());fechaHasta.setText(fechaMax());}
+elegirCategoria();
 });
 }).start();
 btnAnalizar.setOnClickListener(v->analizar());
@@ -74,9 +76,11 @@ paginaActual=pag;
 dibujarParlets();
 }
 void elegirCategoria(){
-new AlertDialog.Builder(this).setTitle("Ver categoría:").setItems(CATEGORIAS,(d,w)->{
+esperandoCategoria=true;
+new AlertDialog.Builder(this).setTitle("Seleccione cuál desea ver:").setCancelable(false).setItems(CATEGORIAS,(d,w)->{
 categoria=w;
 paginaActual=1;
+esperandoCategoria=false;
 if(categoria==4){elegirFiltroPosicion();}else{filtroPosicion=0;btnVer.setText("Ver: "+CATEGORIAS[categoria]);analizar();}
 }).show();
 }
@@ -244,9 +248,19 @@ par.estab=-1;
 lista.add(par);
 }
 posicTop.clear();
-Collections.sort(lista,(a,b)->b.veces-a.veces);
+ordenarPar(lista);
 ultimaListaPar=lista;
 runOnUiThread(()->dibujarParlets());
+}
+void ordenarPar(List<Par> lista){
+switch(ordenActual){
+case 0:Collections.sort(lista,(a,b)->a.par.compareTo(b.par));break;
+case 1:Collections.sort(lista,(a,b)->b.veces-a.veces);break;
+case 2:Collections.sort(lista,(a,b)->frecComp(b.veces,a.veces));break;
+case 3:Collections.sort(lista,(a,b)->Double.compare(a.estab<0?99999:a.estab,b.estab<0?99999:b.estab));break;
+case 4:Collections.sort(lista,(a,b)->b.tar-a.tar);break;
+case 5:Collections.sort(lista,(a,b)->b.noc-a.noc);break;
+}
 }
 double calcularEstab(List<Integer> posiciones){
 if(posiciones==null||posiciones.size()<3)return -1;
@@ -268,7 +282,7 @@ switch(ordenActual){
 case 0:Collections.sort(lista,(a,b)->a.id-b.id);break;
 case 1:Collections.sort(lista,(a,b)->b.veces-a.veces);break;
 case 2:Collections.sort(lista,(a,b)->frecComp(b.veces,a.veces));break;
-case 3:Collections.sort(lista,(a,b)->Double.compare(a.estab<0?9999:a.estab,b.estab<0?9999:b.estab));break;
+case 3:Collections.sort(lista,(a,b)->Double.compare(a.estab<0?99999:a.estab,b.estab<0?99999:b.estab));break;
 case 4:Collections.sort(lista,(a,b)->b.coFij-a.coFij);break;
 case 5:Collections.sort(lista,(a,b)->b.coCor-a.coCor);break;
 case 6:Collections.sort(lista,(a,b)->b.tar-a.tar);break;
