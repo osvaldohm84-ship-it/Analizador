@@ -376,6 +376,15 @@
     android:layout_marginTop="8dp"/>
 
 <TextView
+    android:id="@+id/menuMejoras"
+    android:text="🔧  Mejoras"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
     android:id="@+id/menuAcerca"
     android:text="ℹ️  Acerca de"
     android:textSize="15sp"
