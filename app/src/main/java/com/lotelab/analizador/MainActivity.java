@@ -16,6 +16,7 @@ findViewById(R.id.menuImportar).setOnClickListener(v->{drawerLayout.closeDrawers
 findViewById(R.id.menuNuevo).setOnClickListener(v->{drawerLayout.closeDrawers();nuevo();});
 findViewById(R.id.menuExportar).setOnClickListener(v->{drawerLayout.closeDrawers();exportar();});
 findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers();calcular();});
+findViewById(R.id.menuMejoras).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MejorasActivity.class));});
 findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.0").setPositiveButton("OK",null).show();});
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
