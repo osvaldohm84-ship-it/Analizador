@@ -17,7 +17,7 @@ public Set<Integer> diasSeleccionados=new TreeSet<>();
 public int mesesTotales=0;
 public List<String> todosLosMeses=new ArrayList<>();
 public Map<Integer,Integer> frecuenciaPorNumero=new TreeMap<>();
-public Map<Integer,List<Integer>> numerosPorMes=new TreeMap<>();
+public Map<String,List<Integer>> numerosPorMes=new TreeMap<>();
 public List<PoolN> pools=new ArrayList<>();
 public String getResumenPool(PoolN p){
 StringBuilder s=new StringBuilder();
