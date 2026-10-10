@@ -44,20 +44,41 @@ runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "
 void testCumplimiento(){
 new Thread(()->{
 try{
-Set<Integer> dias=new TreeSet<>();
-dias.add(1);dias.add(2);dias.add(3);
-CumplimientoResultado r=CumplimientoEngine.calcular(db.getReadableDatabase(),dias,"FIJO","AMBOS",0.50);
-final String resumen=CumplimientoEngine.resumenCorto(r);
+Cursor c=db.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM cumplimiento_bitmask WHERE categoria='FIJO'",null);
+c.moveToFirst();
+int filasFijo=c.getInt(0);
+c.close();
+Cursor c2=db.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM cumplimiento_bitmask WHERE categoria='FIJO' AND turno='AMBOS'",null);
+c2.moveToFirst();
+int filasFijoAmbos=c2.getInt(0);
+c2.close();
+Cursor c3=db.getReadableDatabase().rawQuery("SELECT categoria,turno,valor,anio,mes,bitmask FROM cumplimiento_bitmask LIMIT 5",null);
+StringBuilder muestra=new StringBuilder();
+while(c3.moveToNext()){
+muestra.append(c3.getString(0)).append(" | ").append(c3.getString(1)).append(" | ");
+muestra.append(c3.getInt(2)).append(" | ").append(c3.getInt(3)).append("-").append(c3.getInt(4));
+muestra.append(" | bm=").append(c3.getInt(5)).append("\n");
+}
+c3.close();
+Cursor c4=db.getReadableDatabase().rawQuery("SELECT DISTINCT categoria FROM cumplimiento_bitmask",null);
+StringBuilder cats=new StringBuilder();
+while(c4.moveToNext()){cats.append(c4.getString(0)).append(" ");}
+c4.close();
+Cursor c5=db.getReadableDatabase().rawQuery("SELECT DISTINCT turno FROM cumplimiento_bitmask",null);
+StringBuilder turnos=new StringBuilder();
+while(c5.moveToNext()){turnos.append(c5.getString(0)).append(" ");}
+c5.close();
+final String msg="Filas FIJO: "+filasFijo+"\nFilas FIJO+AMBOS: "+filasFijoAmbos+"\n\nCategorías en BD: "+cats.toString()+"\nTurnos en BD: "+turnos.toString()+"\n\nPrimeras 5 filas:\n"+muestra.toString();
 runOnUiThread(()->{
-new AlertDialog.Builder(this).setTitle("🧪 Test Cumplimiento").setMessage(resumen).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
+new AlertDialog.Builder(this).setTitle("🔍 Debug Bitmask").setMessage(msg).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
 ClipboardManager cm=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-cm.setPrimaryClip(ClipData.newPlainText("cumplimiento",resumen));
-Toast.makeText(this,"Copiado al portapapeles",Toast.LENGTH_SHORT).show();
+cm.setPrimaryClip(ClipData.newPlainText("debug",msg));
+Toast.makeText(this,"Copiado",Toast.LENGTH_SHORT).show();
 }).show();
 });
 }catch(final Exception e){
 runOnUiThread(()->{
-new AlertDialog.Builder(this).setTitle("Error").setMessage(e.toString()+"\n\n"+(e.getMessage()!=null?e.getMessage():"")).setPositiveButton("OK",null).show();
+new AlertDialog.Builder(this).setTitle("Error").setMessage(e.toString()).setPositiveButton("OK",null).show();
 });
 }
 }).start();
