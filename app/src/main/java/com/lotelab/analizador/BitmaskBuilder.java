@@ -1,5 +1,5 @@
 package com.lotelab.analizador;
-import android.content.*;import android.database.*;import android.database.sqlite.*;import java.util.*;
+import android.database.*;import android.database.sqlite.*;import java.util.*;
 public class BitmaskBuilder{
 public static final String[] CATEGORIAS={"FIJO","C1","C2","CENTENA","DECENA","TERMINAL"};
 public static final String[] TURNOS={"AMBOS","T","N"};
@@ -56,10 +56,10 @@ int contador=0;
 for(Map.Entry<String,Integer> e:mapa.entrySet()){
 String[] partes=e.getKey().split("_");
 String categoria=partes[0];
-String turno=partes[1];
-int valor=Integer.parseInt(partes[2]);
-int anio=Integer.parseInt(partes[3]);
-int mes=Integer.parseInt(partes[4]);
+int valor=Integer.parseInt(partes[1]);
+int anio=Integer.parseInt(partes[2]);
+int mes=Integer.parseInt(partes[3]);
+String turno=partes[4];
 int bitmask=e.getValue();
 int aciertos=Integer.bitCount(bitmask);
 ins.clearBindings();
@@ -83,15 +83,15 @@ return -1;
 }
 static void acumular(Map<String,Integer> mapa,String cat,int valor,int anio,int mes,int bitDia,String tn){
 String base=cat+"_"+valor+"_"+anio+"_"+mes;
-String kAmbos="AMBOS_"+base;
+String kAmbos=base+"_AMBOS";
 Integer v=mapa.get(kAmbos);
 mapa.put(kAmbos,(v==null?0:v)|bitDia);
 if("T".equals(tn)){
-String kT="T_"+base;
+String kT=base+"_T";
 Integer v2=mapa.get(kT);
 mapa.put(kT,(v2==null?0:v2)|bitDia);
 }else if("N".equals(tn)){
-String kN="N_"+base;
+String kN=base+"_N";
 Integer v3=mapa.get(kN);
 mapa.put(kN,(v3==null?0:v3)|bitDia);
 }
