@@ -108,9 +108,9 @@ return 100;
 }
 public static String resumenCorto(CumplimientoResultado r){
 StringBuilder s=new StringBuilder();
-s.append("Categoría: ").append(r.categoria).append("\n");
+s.append("Categoria: ").append(r.categoria).append("\n");
 s.append("Turno: ").append(r.turno).append("\n");
-s.append("Días: ").append(r.diasSeleccionados.toString()).append("\n");
+s.append("Dias: ").append(r.diasSeleccionados.toString()).append("\n");
 s.append("Meses analizados: ").append(r.mesesTotales).append("\n\n");
 if(r.pools.isEmpty()){
 s.append("Sin datos suficientes\n");
