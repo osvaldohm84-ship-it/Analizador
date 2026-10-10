@@ -268,7 +268,7 @@
 
 <TextView
     android:id="@+id/menuBuscarDias"
-    android:text="🔍  Buscar por días"
+    android:text="🔍  Buscar por dias"
     android:textSize="15sp"
     android:padding="14dp"
     android:textColor="#212121"
@@ -277,7 +277,7 @@
 
 <TextView
     android:id="@+id/menuBuscarNumeros"
-    android:text="🔢  Buscar por números"
+    android:text="🔢  Buscar por numeros"
     android:textSize="15sp"
     android:padding="14dp"
     android:textColor="#212121"
@@ -285,7 +285,7 @@
     android:layout_height="wrap_content"/>
 
 <TextView
-    android:text="── ANÁLISIS ──"
+    android:text="── ANALISIS ──"
     android:textSize="11sp"
     android:textStyle="bold"
     android:textColor="#757575"
@@ -297,7 +297,16 @@
 
 <TextView
     android:id="@+id/menuEstadisticas"
-    android:text="📈  Estadísticas"
+    android:text="📈  Estadisticas"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/menuCumplimiento"
+    android:text="🧪  Test Cumplimiento"
     android:textSize="15sp"
     android:padding="14dp"
     android:textColor="#212121"
@@ -315,7 +324,7 @@
 
 <TextView
     android:id="@+id/menuGuardarPred"
-    android:text="💾  Guardar predicción de hoy"
+    android:text="💾  Guardar prediccion de hoy"
     android:textSize="15sp"
     android:padding="14dp"
     android:textColor="#212121"
@@ -380,10 +389,10 @@
 
 <TextView
     android:id="@+id/menuTestCumplimiento"
-    android:text="🧪  Test Cumplimiento"
+    android:text="🧪  Test (debug)"
     android:textSize="15sp"
     android:padding="14dp"
-    android:textColor="#212121"
+    android:textColor="#616161"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"/>
 
