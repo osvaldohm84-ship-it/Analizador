@@ -1,5 +1,5 @@
 package com.lotelab.analizador;
-import android.app.*;import android.os.*;import android.content.*;import android.database.sqlite.*;import android.graphics.*;import android.text.*;import android.view.*;import android.widget.*;import java.util.*;
+import android.app.*;import android.os.*;import android.content.*;import android.database.sqlite.*;import android.graphics.*;import android.view.*;import android.widget.*;import java.util.*;
 public class CumplimientoActivity extends Activity{
 LinearLayout grillaDias;
 TextView lblDiasSeleccionados,txtResultados;
@@ -11,7 +11,6 @@ CumplimientoResultado ultimoResultado=null;
 static final String[] CATEGORIAS={"FIJO","C1","C2","CENTENA","DECENA","TERMINAL"};
 static final String[] TURNOS={"AMBOS","T","N"};
 static final String[] TURNOS_DISPLAY={"AMBOS","TARDE","NOCHE"};
-static final int[] TAMANOS={10,15,20,25,30};
 @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_cumplimiento);
 grillaDias=findViewById(R.id.grillaDias);
 lblDiasSeleccionados=findViewById(R.id.lblDiasSeleccionados);
@@ -26,7 +25,7 @@ actualizarLblDias();
 btnCategoria.setOnClickListener(v->elegirCategoria());
 btnTurno.setOnClickListener(v->elegirTurno());
 btnCalcular.setOnClickListener(v->calcular());
-btnGuardar.setOnClickListener(v->guardarComoMetodo());
+btnGuardar.setOnClickListener(v->abrirDialogoGuardar());
 }
 void crearGrillaDias(){
 grillaDias.removeAllViews();
@@ -103,43 +102,54 @@ runOnUiThread(()->txtResultados.setText("Error: "+e.toString()));
 }
 }).start();
 }
-void guardarComoMetodo(){
+void abrirDialogoGuardar(){
 if(ultimoResultado==null||ultimoResultado.pools.isEmpty()){
 Toast.makeText(this,"Primero calcule un metodo",Toast.LENGTH_SHORT).show();
 return;
 }
-final String[] tamanosTxt=new String[TAMANOS.length];
-for(int i=0;i<TAMANOS.length;i++)tamanosTxt[i]="Top "+TAMANOS[i];
-new AlertDialog.Builder(this).setTitle("Tamano del pool:").setItems(tamanosTxt,(d,w)->{
-final int tamano=TAMANOS[w];
-pedirNombre(tamano);
-}).show();
+LinearLayout principal=new LinearLayout(this);
+principal.setOrientation(LinearLayout.VERTICAL);
+principal.setPadding(20,20,20,20);
+ScrollView scroll=new ScrollView(this);
+scroll.addView(principal);
+TextView tvInfo=new TextView(this);
+tvInfo.setText("Marca los tamanos que quieras guardar:");
+tvInfo.setTextSize(13);
+tvInfo.setTextColor(Color.parseColor("#0D47A1"));
+tvInfo.setPadding(0,0,0,10);
+principal.addView(tvInfo);
+final CheckBox[] checks=new CheckBox[ultimoResultado.pools.size()];
+for(int i=0;i<ultimoResultado.pools.size();i++){
+CumplimientoResultado.PoolN p=ultimoResultado.pools.get(i);
+checks[i]=new CheckBox(this);
+checks[i].setText("Top "+p.tamano+" - "+p.mesesCumplidos+"/"+ultimoResultado.mesesTotales+" ("+String.format("%.1f",100.0*p.mesesCumplidos/ultimoResultado.mesesTotales)+"%)");
+checks[i].setTextSize(13);
+checks[i].setChecked(p.tamano==20||p.tamano==30);
+principal.addView(checks[i]);
 }
-void pedirNombre(final int tamano){
-LinearLayout ll=new LinearLayout(this);
-ll.setOrientation(LinearLayout.VERTICAL);
-ll.setPadding(20,20,20,20);
-final EditText et=new EditText(this);
-String sugerido=categoriaActual+" dias "+ultimoResultado.diasSeleccionados.toString()+" Top"+tamano;
-et.setText(sugerido);
-ll.addView(et);
-new AlertDialog.Builder(this).setTitle("Nombre del metodo:").setView(ll).setPositiveButton("Guardar",(d,w)->{
-String nombre=et.getText().toString().trim();
-if(nombre.isEmpty())nombre=sugerido;
-guardarMetodo(nombre,tamano);
+new AlertDialog.Builder(this).setTitle("Guardar metodos").setView(scroll).setPositiveButton("Guardar marcados",(d,w)->{
+int guardados=0;
+for(int i=0;i<checks.length;i++){
+if(checks[i].isChecked()){
+CumplimientoResultado.PoolN p=ultimoResultado.pools.get(i);
+guardarMetodo(p);
+guardados++;
+}
+}
+int total=MetodoManager.contar(this);
+String aviso="";
+if(total>20)aviso="\n\nAviso: tienes "+total+" metodos. Considera limpiar.";
+Toast.makeText(this,"Guardados: "+guardados+" | Total: "+total+aviso,Toast.LENGTH_LONG).show();
 }).setNegativeButton("Cancelar",null).show();
 }
-void guardarMetodo(String nombre,int tamano){
-CumplimientoResultado.PoolN pool=null;
-for(CumplimientoResultado.PoolN p:ultimoResultado.pools){
-if(p.tamano==tamano){pool=p;break;}
-}
-if(pool==null){
-Toast.makeText(this,"Tamano no encontrado",Toast.LENGTH_SHORT).show();
-return;
-}
+void guardarMetodo(CumplimientoResultado.PoolN pool){
 Metodo m=new Metodo();
-m.nombre=nombre;
+StringBuilder dias=new StringBuilder();
+for(int d:ultimoResultado.diasSeleccionados){
+if(dias.length()>0)dias.append(",");
+dias.append(d);
+}
+m.nombre=categoriaActual+" dias "+dias.toString()+" Top"+pool.tamano;
 m.categoria=ultimoResultado.categoria;
 m.turno=ultimoResultado.turno;
 int bitmask=0;
@@ -152,34 +162,17 @@ if(i>0)csv.append(",");
 csv.append(pool.numeros.get(i));
 }
 m.numerosPoolCsv=csv.toString();
-m.estado=calcularEstado(pool.rachaActual,pool.mesesFallados);
+m.estado=calcularEstado(pool.rachaActual);
 m.rachaActual=pool.rachaActual;
 m.mayorRacha=pool.mayorRacha;
 m.ultimoFallo=pool.ultimoFallo;
-m.mesesConsecutivosFallando=calcularMesesFallando();
+m.mesesConsecutivosFallando=pool.rachaActual==0?1:0;
 m.totalMeses=ultimoResultado.mesesTotales;
 m.totalCumplidos=pool.mesesCumplidos;
 m.totalFallados=pool.mesesFallados;
-long id=MetodoManager.guardar(this,m);
-if(id>0){
-int total=MetodoManager.contar(this);
-String aviso="";
-if(total>20)aviso="\n\nAviso: tienes "+total+" metodos guardados. Considera limpiar.";
-Toast.makeText(this,"Metodo guardado. Total: "+total+aviso,Toast.LENGTH_LONG).show();
-}else{
-Toast.makeText(this,"Error al guardar",Toast.LENGTH_SHORT).show();
+MetodoManager.guardar(this,m);
 }
-}
-int calcularMesesFallando(){
-if(ultimoResultado==null)return 0;
-CumplimientoResultado.PoolN pool=null;
-for(CumplimientoResultado.PoolN p:ultimoResultado.pools){
-if(p.tamano==ultimoResultado.pools.get(0).tamano){pool=p;break;}
-}
-if(pool==null)return 0;
-return pool.rachaActual==0?1:0;
-}
-String calcularEstado(int racha,int fallos){
+String calcularEstado(int racha){
 if(racha==0)return "ALERTA";
 if(racha<=2)return "RIESGO";
 return "CUMPLIENDO";
