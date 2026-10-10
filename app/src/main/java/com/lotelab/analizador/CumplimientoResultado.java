@@ -1,45 +1,48 @@
 package com.lotelab.analizador;
 import java.util.*;
 public class CumplimientoResultado{
-public List<Integer> pool=new ArrayList<>();
-public int totalNumerosCategoria=100;
-public int mesesTotales=0;
+public static class PoolN{
+public int tamano=0;
+public List<Integer> numeros=new ArrayList<>();
 public int mesesCumplidos=0;
-public double tasaCumplimiento=0;
-public int aciertosObservados=0;
-public double aciertosEsperados=0;
+public int mesesFallados=0;
 public int rachaActual=0;
-public int mayorSequia=0;
-public int mesesConsecutivosSinCumplir=0;
-public Map<Integer,int[]> porAnio=new TreeMap<>();
-public List<String> advertencias=new ArrayList<>();
+public int mayorRacha=0;
+public List<String> mesesFalladosLista=new ArrayList<>();
+public String ultimoFallo="";
+}
 public String categoria="FIJO";
 public String turno="AMBOS";
-public double umbral=0.95;
 public Set<Integer> diasSeleccionados=new TreeSet<>();
-public String fechaInicio="";
-public String fechaFin="";
-public String veredicto="SIN_DATOS";
-public String getResumen(){
+public int mesesTotales=0;
+public List<String> todosLosMeses=new ArrayList<>();
+public Map<Integer,Integer> frecuenciaPorNumero=new TreeMap<>();
+public Map<Integer,List<Integer>> numerosPorMes=new TreeMap<>();
+public List<PoolN> pools=new ArrayList<>();
+public String getResumenPool(PoolN p){
 StringBuilder s=new StringBuilder();
-s.append("Pool: ").append(pool.size()).append(" números");
-s.append(" | Tasa: ").append(String.format("%.1f",tasaCumplimiento*100)).append("%");
-s.append(" | Meses: ").append(mesesCumplidos).append("/").append(mesesTotales);
-s.append(" | Aciertos: ").append(aciertosObservados);
-s.append(" | Racha: ").append(rachaActual);
-s.append(" | Sequía: ").append(mayorSequia);
+s.append("Top ").append(p.tamano).append(": ");
+s.append(getPoolComoTexto(p.numeros)).append("\n");
+s.append("  Cumplimiento: ").append(p.mesesCumplidos).append("/").append(mesesTotales);
+s.append(" (").append(String.format("%.1f",100.0*p.mesesCumplidos/mesesTotales)).append("%)\n");
+s.append("  Fallos: ").append(p.mesesFallados).append("\n");
+s.append("  Racha actual: ").append(p.rachaActual).append(" meses\n");
+s.append("  Mayor racha: ").append(p.mayorRacha).append(" meses\n");
+if(!p.ultimoFallo.isEmpty()){
+s.append("  Último fallo: ").append(p.ultimoFallo).append("\n");
+}
 return s.toString();
 }
-public String getPoolComoTexto(){
-if(pool.isEmpty())return "(vacío)";
+public String getPoolComoTexto(List<Integer> lista){
+if(lista.isEmpty())return "(vacío)";
 StringBuilder s=new StringBuilder();
-for(int i=0;i<pool.size();i++){
+for(int i=0;i<lista.size();i++){
 if("CENTENA".equals(categoria)||"DECENA".equals(categoria)||"TERMINAL".equals(categoria)){
-s.append(pool.get(i));
+s.append(lista.get(i));
 }else{
-s.append(String.format("%02d",pool.get(i)));
+s.append(String.format("%02d",lista.get(i)));
 }
-if(i<pool.size()-1)s.append(", ");
+if(i<lista.size()-1)s.append(", ");
 }
 return s.toString();
 }
