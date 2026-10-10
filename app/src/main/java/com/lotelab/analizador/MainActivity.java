@@ -44,33 +44,33 @@ runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "
 void testCumplimiento(){
 new Thread(()->{
 try{
-Cursor c=db.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM cumplimiento_bitmask WHERE categoria='FIJO'",null);
-c.moveToFirst();
-int filasFijo=c.getInt(0);
-c.close();
-Cursor c2=db.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM cumplimiento_bitmask WHERE categoria='FIJO' AND turno='AMBOS'",null);
-c2.moveToFirst();
-int filasFijoAmbos=c2.getInt(0);
-c2.close();
-Cursor c3=db.getReadableDatabase().rawQuery("SELECT categoria,turno,valor,anio,mes,bitmask FROM cumplimiento_bitmask LIMIT 5",null);
+Cursor c=db.getReadableDatabase().rawQuery("SELECT valor,anio,mes,bitmask FROM cumplimiento_bitmask WHERE categoria='FIJO' AND turno='AMBOS' ORDER BY anio,mes LIMIT 10",null);
 StringBuilder muestra=new StringBuilder();
-while(c3.moveToNext()){
-muestra.append(c3.getString(0)).append(" | ").append(c3.getString(1)).append(" | ");
-muestra.append(c3.getInt(2)).append(" | ").append(c3.getInt(3)).append("-").append(c3.getInt(4));
-muestra.append(" | bm=").append(c3.getInt(5)).append("\n");
+int idx=1;
+while(c.moveToNext()){
+int valor=c.getInt(0);
+int anio=c.getInt(1);
+int mes=c.getInt(2);
+int bm=c.getInt(3);
+int bmDias123=bm&7;
+muestra.append(idx).append(". FIJO ").append(String.format("%02d",valor)).append(" ");
+muestra.append(anio).append("-").append(mes).append(" bm=").append(bm);
+muestra.append(" bm&7=").append(bmDias123).append("\n");
+idx++;
 }
-c3.close();
-Cursor c4=db.getReadableDatabase().rawQuery("SELECT DISTINCT categoria FROM cumplimiento_bitmask",null);
-StringBuilder cats=new StringBuilder();
-while(c4.moveToNext()){cats.append(c4.getString(0)).append(" ");}
-c4.close();
-Cursor c5=db.getReadableDatabase().rawQuery("SELECT DISTINCT turno FROM cumplimiento_bitmask",null);
-StringBuilder turnos=new StringBuilder();
-while(c5.moveToNext()){turnos.append(c5.getString(0)).append(" ");}
-c5.close();
-final String msg="Filas FIJO: "+filasFijo+"\nFilas FIJO+AMBOS: "+filasFijoAmbos+"\n\nCategorías en BD: "+cats.toString()+"\nTurnos en BD: "+turnos.toString()+"\n\nPrimeras 5 filas:\n"+muestra.toString();
+c.close();
+int countCumple=0;
+int total=0;
+Cursor c2=db.getReadableDatabase().rawQuery("SELECT valor,anio,mes,bitmask FROM cumplimiento_bitmask WHERE categoria='FIJO' AND turno='AMBOS'",null);
+while(c2.moveToNext()){
+int bm=c2.getInt(3);
+total++;
+if((bm&7)!=0)countCumple++;
+}
+c2.close();
+final String msg="Filas FIJO+AMBOS: "+total+"\nCumplen dias 1-2-3: "+countCumple+"\n\nPrimeras 10:\n"+muestra.toString();
 runOnUiThread(()->{
-new AlertDialog.Builder(this).setTitle("🔍 Debug Bitmask").setMessage(msg).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
+new AlertDialog.Builder(this).setTitle("🔍 Debug FIJO").setMessage(msg).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
 ClipboardManager cm=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
 cm.setPrimaryClip(ClipData.newPlainText("debug",msg));
 Toast.makeText(this,"Copiado",Toast.LENGTH_SHORT).show();
