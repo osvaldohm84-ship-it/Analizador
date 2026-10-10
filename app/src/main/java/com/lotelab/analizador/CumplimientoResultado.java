@@ -29,12 +29,12 @@ s.append("  Fallos: ").append(p.mesesFallados).append("\n");
 s.append("  Racha actual: ").append(p.rachaActual).append(" meses\n");
 s.append("  Mayor racha: ").append(p.mayorRacha).append(" meses\n");
 if(!p.ultimoFallo.isEmpty()){
-s.append("  Último fallo: ").append(p.ultimoFallo).append("\n");
+s.append("  Ultimo fallo: ").append(p.ultimoFallo).append("\n");
 }
 return s.toString();
 }
 public String getPoolComoTexto(List<Integer> lista){
-if(lista.isEmpty())return "(vacío)";
+if(lista.isEmpty())return "(vacio)";
 StringBuilder s=new StringBuilder();
 for(int i=0;i<lista.size();i++){
 if("CENTENA".equals(categoria)||"DECENA".equals(categoria)||"TERMINAL".equals(categoria)){
