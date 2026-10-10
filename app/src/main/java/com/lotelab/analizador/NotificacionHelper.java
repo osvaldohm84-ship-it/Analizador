@@ -1,5 +1,5 @@
 package com.lotelab.analizador;
-import android.app.*;import android.content.*;import android.os.*;import androidx.core.app.NotificationCompat;import java.util.*;
+import android.app.*;import android.content.*;import android.content.pm.PackageManager;import android.os.*;import java.util.*;
 public class NotificacionHelper{
 public static final String CANAL_ID="cumplimiento";
 public static final String CANAL_NOMBRE="Cumplimiento";
@@ -16,9 +16,11 @@ nm.createNotificationChannel(canal);
 }
 public static void pedirPermisoSiNecesario(Activity act){
 if(Build.VERSION.SDK_INT>=33){
+try{
 if(act.checkSelfPermission("android.permission.POST_NOTIFICATIONS")!=PackageManager.PERMISSION_GRANTED){
 act.requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"},100);
 }
+}catch(Exception e){}
 }
 }
 public static void mostrarNotificacion(Activity act,String titulo,String texto){
@@ -26,16 +28,28 @@ try{
 NotificationManager nm=(NotificationManager)act.getSystemService(Context.NOTIFICATION_SERVICE);
 Intent intent=new Intent(act,MetodosActivity.class);
 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
-PendingIntent pi=PendingIntent.getActivity(act,0,intent,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-NotificationCompat.Builder b=new NotificationCompat.Builder(act,CANAL_ID)
-.setSmallIcon(android.R.drawable.ic_dialog_info)
-.setContentTitle(titulo)
-.setContentText(texto)
-.setStyle(new NotificationCompat.BigTextStyle().bigText(texto))
-.setPriority(NotificationCompat.PRIORITY_DEFAULT)
-.setAutoCancel(true)
-.setContentIntent(pi);
+int flags=PendingIntent.FLAG_UPDATE_CURRENT;
+if(Build.VERSION.SDK_INT>=23)flags|=PendingIntent.FLAG_IMMUTABLE;
+PendingIntent pi=PendingIntent.getActivity(act,0,intent,flags);
+Notification.Builder b;
+if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O){
+b=new Notification.Builder(act,CANAL_ID);
+}else{
+b=new Notification.Builder(act);
+}
+b.setSmallIcon(android.R.drawable.ic_dialog_info);
+b.setContentTitle(titulo);
+b.setContentText(texto);
+if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN){
+b.setStyle(new Notification.BigTextStyle().bigText(texto));
+}
+b.setAutoCancel(true);
+b.setContentIntent(pi);
+if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN){
 nm.notify(NOTIF_ID,b.build());
+}else{
+nm.notify(NOTIF_ID,b.getNotification());
+}
 }catch(Exception e){}
 }
 public static void agruparYMostrar(Activity act,List<Alerta> alertas){
