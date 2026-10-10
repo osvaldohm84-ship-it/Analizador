@@ -21,11 +21,14 @@ findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers
 findViewById(R.id.menuBitmask).setOnClickListener(v->{drawerLayout.closeDrawers();reconstruirBitmask();});
 findViewById(R.id.menuTestCumplimiento).setOnClickListener(v->{drawerLayout.closeDrawers();testCumplimiento();});
 findViewById(R.id.menuMejoras).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MejorasActivity.class));});
-findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.6").setPositiveButton("OK",null).show();});
+findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.7").setPositiveButton("OK",null).show();});
+NotificacionHelper.crearCanal(this);
+NotificacionHelper.pedirPermisoSiNecesario(this);
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();
 int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
 final int fn=n;final int ff=filas;
 runOnUiThread(()->estado.setText("Historial cargado: "+fn+" | Bitmask: "+ff));
+new Thread(this::validarTodosLosMetodos).start();
 }catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}
 else{
 estado.setText("Historial: "+db.count()+" sorteos");
@@ -39,10 +42,72 @@ runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "
 final int f=filas;
 runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "+f));
 }
+long ultima=getPreferences(0).getLong("ultimaValidacion",0);
+long ahora=System.currentTimeMillis();
+if(ahora-ultima>86400000L){
+new Thread(this::validarTodosLosMetodos).start();
+}
 }catch(Exception e){}
 }).start();
 }
 }
+void validarTodosLosMetodos(){
+try{
+List<Metodo> metodos=MetodoManager.listar(this);
+if(metodos.isEmpty())return;
+int cambios=0;
+List<Alerta> alertas=new ArrayList<>();
+for(Metodo m:metodos){
+try{
+Set<Integer> dias=new TreeSet<>();
+for(int d=1;d<=31;d++){if((m.diasBitmask&(1<<(d-1)))!=0)dias.add(d);}
+if(dias.isEmpty())continue;
+SQLiteDatabase dbRead=getReadableDatabase();
+CumplimientoResultado r=CumplimientoEngine.calcular(dbRead,dias,m.categoria,m.turno);
+if(r.pools.isEmpty())continue;
+CumplimientoResultado.PoolN pool=null;
+for(CumplimientoResultado.PoolN p:r.pools){
+if(p.tamano==m.tamanoPool){pool=p;break;}
+}
+if(pool==null)continue;
+String nuevoEstado;
+if(pool.rachaActual==0)nuevoEstado="ALERTA";
+else if(pool.rachaActual<=2)nuevoEstado="RIESGO";
+else nuevoEstado="CUMPLIENDO";
+String estadoAnterior=m.estado;
+MetodoManager.actualizarEstado(this,m.id,nuevoEstado,pool.rachaActual,pool.mayorRacha,pool.ultimoFallo,pool.rachaActual==0?1:0,r.mesesTotales,pool.mesesCumplidos,pool.mesesFallados);
+if(!estadoAnterior.equals(nuevoEstado)){
+Alerta a=new Alerta();
+a.metodoId=m.id;
+a.nombreMetodo=m.nombre;
+a.estadoAnterior=estadoAnterior;
+a.estadoNuevo=nuevoEstado;
+if("RECUPERADO".equals(calcularTipo(estadoAnterior,nuevoEstado))){a.tipo="RECUPERADO";a.mensaje="Recuperado - racha "+pool.rachaActual+" meses";}
+else if("ALERTA".equals(nuevoEstado)){a.tipo="ALERTA";a.mensaje="Paso a ALERTA - "+pool.rachaActual+" meses fallando";}
+else if("RIESGO".equals(nuevoEstado)){a.tipo="RIESGO";a.mensaje="Paso a RIESGO - racha "+pool.rachaActual+" meses";}
+else{a.tipo="NUEVO_FALLO";a.mensaje="Cambio de estado a "+nuevoEstado;}
+AlertaManager.guardar(this,a);
+alertas.add(a);
+cambios++;
+}
+}catch(Exception e){}
+}
+getPreferences(0).edit().putLong("ultimaValidacion",System.currentTimeMillis()).apply();
+if(cambios>0){
+final List<Alerta> alertasFinales=alertas;
+runOnUiThread(()->{
+NotificacionHelper.agruparYMostrar(this,alertasFinales);
+Toast.makeText(this,cambios+" metodo"+(cambios==1?"":"s")+" cambio de estado",Toast.LENGTH_LONG).show();
+});
+}
+}catch(Exception e){}
+}
+String calcularTipo(String anterior,String nuevo){
+if("CUMPLIENDO".equals(anterior)&&("RIESGO".equals(nuevo)||"ALERTA".equals(nuevo)))return "RIESGO";
+if(("RIESGO".equals(anterior)||"ALERTA".equals(anterior))&&"CUMPLIENDO".equals(nuevo))return "RECUPERADO";
+return "NUEVO_FALLO";
+}
+SQLiteDatabase getReadableDatabase(){return db.getReadableDatabase();}
 void testCumplimiento(){
 new Thread(()->{
 try{
@@ -89,6 +154,7 @@ runOnUiThread(()->{
 estado.setText("Importados: "+nf+" | Total: "+db.count()+" | Bitmask: "+ff);
 Toast.makeText(this,"Bitmask actualizada: "+ff+" filas",Toast.LENGTH_LONG).show();
 });
+new Thread(this::validarTodosLosMetodos).start();
 }catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
 else if(r==CREATE){Uri u=d.getData();new Thread(()->{try{OutputStream out=getContentResolver().openOutputStream(u);if(out==null){runOnUiThread(()->Toast.makeText(this,"No se pudo abrir el archivo",Toast.LENGTH_LONG).show());return;}
 Writer w=new OutputStreamWriter(out,StandardCharsets.UTF_8);
@@ -100,7 +166,7 @@ runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Listo").setMessage("Ar
 }catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
 String getName(Uri u){Cursor c=getContentResolver().query(u,null,null,null,null);if(c!=null){try{int x=c.getColumnIndex(OpenableColumns.DISPLAY_NAME);if(c.moveToFirst()&&x>=0)return c.getString(x);}finally{c.close();}}return "archivo";}
 void nuevo(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);String[] h={"Fecha dd-MM-yyyy","T/N","Centena","Fijo","Corrido 1","Corrido 2"};EditText[] e=new EditText[6];for(int i=0;i<6;i++){e[i]=new EditText(this);e[i].setHint(h[i]);l.addView(e[i]);}new AlertDialog.Builder(this).setTitle("Agregar sorteo").setView(l).setPositiveButton("Guardar",(x,w)->{try{db.insert(new Draw(e[0].getText().toString(),e[1].getText().toString(),e[2].getText().toString(),pad(e[3].getText().toString()),pad(e[4].getText().toString()),pad(e[5].getText().toString())));estado.setText("Total: "+db.count());new Thread(this::validarPrediccionesAuto).start();
-new Thread(()->{try{int f=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());final int ff=f;runOnUiThread(()->Toast.makeText(this,"Bitmask actualizada: "+ff+" filas",Toast.LENGTH_SHORT).show());}catch(Exception ex){}}).start();
+new Thread(()->{try{int f=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());final int ff=f;runOnUiThread(()->Toast.makeText(this,"Bitmask actualizada: "+ff+" filas",Toast.LENGTH_SHORT).show());new Thread(this::validarTodosLosMetodos).start();}catch(Exception ex){}}).start();
 }catch(Exception z){Toast.makeText(this,"Error: "+z.getMessage(),Toast.LENGTH_LONG).show();}}).setNegativeButton("Cancelar",null).show();}
 String pad(String s){s=s.trim();if(s.length()==1)s="0"+s;return s;}
 void calcular(){new Thread(()->{try{List<Draw> lista=leerTodos();Stats s=Stats.calc(lista);runOnUiThread(()->{dibujarTabla(s);mostrarHoy(s,lista);mostrarCalientes(s);mostrarFrios(s);mostrarSesgos(s);mostrarCentenas(s);mostrarCombinaciones(s);mostrarBacktesting(s);estado.setText("Listo. "+lista.size()+" sorteos procesados.");});}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
@@ -212,8 +278,8 @@ tabla.addView(fila);}}
 TextView celda(String txt,String bg,int colorTexto,boolean negrita){TextView tv=new TextView(this);tv.setText(txt);tv.setPadding(6,8,6,8);tv.setTextSize(10);tv.setTextColor(colorTexto);tv.setBackgroundColor(Color.parseColor(bg));if(negrita)tv.setTypeface(null,Typeface.BOLD);return tv;}
 void exportar(){Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("text/csv");intent.putExtra(Intent.EXTRA_TITLE,"historial_loteria.csv");startActivityForResult(intent,CREATE);}
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,5);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");d.execSQL("CREATE TABLE IF NOT EXISTS cumplimiento_bitmask(categoria TEXT NOT NULL,turno TEXT NOT NULL,valor INTEGER NOT NULL,anio INTEGER NOT NULL,mes INTEGER NOT NULL,bitmask INTEGER NOT NULL,aciertos_count INTEGER NOT NULL,PRIMARY KEY(categoria,turno,valor,anio,mes))");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_cat_valor ON cumplimiento_bitmask(categoria,valor)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_anio_mes ON cumplimiento_bitmask(anio,mes)");d.execSQL("CREATE TABLE IF NOT EXISTS metodos(id INTEGER PRIMARY KEY AUTOINCREMENT,nombre TEXT,categoria TEXT,turno TEXT,dias_bitmask INTEGER,tamano_pool INTEGER,numeros_pool TEXT,fecha_creacion INTEGER,estado TEXT,racha_actual INTEGER,mayor_racha INTEGER,ultimo_fallo TEXT,meses_consecutivos_fallando INTEGER,total_meses INTEGER,total_cumplidos INTEGER,total_fallados INTEGER,activo INTEGER DEFAULT 1)");d.execSQL("CREATE TABLE IF NOT EXISTS metodos_historial(id INTEGER PRIMARY KEY AUTOINCREMENT,metodo_id INTEGER,anio INTEGER,mes INTEGER,cumplio INTEGER,numeros_salieron TEXT)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_activo ON metodos(activo)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_hist ON metodos_historial(metodo_id)");}public void onUpgrade(SQLiteDatabase d,int o,int n){if(o<2){d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");}if(o<3){d.execSQL("CREATE TABLE IF NOT EXISTS cumplimiento_bitmask(categoria TEXT NOT NULL,turno TEXT NOT NULL,valor INTEGER NOT NULL,anio INTEGER NOT NULL,mes INTEGER NOT NULL,bitmask INTEGER NOT NULL,aciertos_count INTEGER NOT NULL,PRIMARY KEY(categoria,turno,valor,anio,mes))");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_cat_valor ON cumplimiento_bitmask(categoria,valor)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_anio_mes ON cumplimiento_bitmask(anio,mes)");}if(o<5){d.execSQL("CREATE TABLE IF NOT EXISTS metodos(id INTEGER PRIMARY KEY AUTOINCREMENT,nombre TEXT,categoria TEXT,turno TEXT,dias_bitmask INTEGER,tamano_pool INTEGER,numeros_pool TEXT,fecha_creacion INTEGER,estado TEXT,racha_actual INTEGER,mayor_racha INTEGER,ultimo_fallo TEXT,meses_consecutivos_fallando INTEGER,total_meses INTEGER,total_cumplidos INTEGER,total_fallados INTEGER,activo INTEGER DEFAULT 1)");d.execSQL("CREATE TABLE IF NOT EXISTS metodos_historial(id INTEGER PRIMARY KEY AUTOINCREMENT,metodo_id INTEGER,anio INTEGER,mes INTEGER,cumplio INTEGER,numeros_salieron TEXT)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_activo ON metodos(activo)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_hist ON metodos_historial(metodo_id)");}}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
-static class DBHelperAux extends SQLiteOpenHelper{DBHelperAux(Context c){super(c,"loteria.db",null,5);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,6);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");d.execSQL("CREATE TABLE IF NOT EXISTS cumplimiento_bitmask(categoria TEXT NOT NULL,turno TEXT NOT NULL,valor INTEGER NOT NULL,anio INTEGER NOT NULL,mes INTEGER NOT NULL,bitmask INTEGER NOT NULL,aciertos_count INTEGER NOT NULL,PRIMARY KEY(categoria,turno,valor,anio,mes))");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_cat_valor ON cumplimiento_bitmask(categoria,valor)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_anio_mes ON cumplimiento_bitmask(anio,mes)");d.execSQL("CREATE TABLE IF NOT EXISTS metodos(id INTEGER PRIMARY KEY AUTOINCREMENT,nombre TEXT,categoria TEXT,turno TEXT,dias_bitmask INTEGER,tamano_pool INTEGER,numeros_pool TEXT,fecha_creacion INTEGER,estado TEXT,racha_actual INTEGER,mayor_racha INTEGER,ultimo_fallo TEXT,meses_consecutivos_fallando INTEGER,total_meses INTEGER,total_cumplidos INTEGER,total_fallados INTEGER,activo INTEGER DEFAULT 1)");d.execSQL("CREATE TABLE IF NOT EXISTS metodos_historial(id INTEGER PRIMARY KEY AUTOINCREMENT,metodo_id INTEGER,anio INTEGER,mes INTEGER,cumplio INTEGER,numeros_salieron TEXT)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_activo ON metodos(activo)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_hist ON metodos_historial(metodo_id)");d.execSQL("CREATE TABLE IF NOT EXISTS alertas(id INTEGER PRIMARY KEY AUTOINCREMENT,metodo_id INTEGER,nombre_metodo TEXT,tipo TEXT,estado_anterior TEXT,estado_nuevo TEXT,mensaje TEXT,fecha INTEGER,leida INTEGER DEFAULT 0)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_alertas_leida ON alertas(leida)");}public void onUpgrade(SQLiteDatabase d,int o,int n){if(o<2){d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");}if(o<3){d.execSQL("CREATE TABLE IF NOT EXISTS cumplimiento_bitmask(categoria TEXT NOT NULL,turno TEXT NOT NULL,valor INTEGER NOT NULL,anio INTEGER NOT NULL,mes INTEGER NOT NULL,bitmask INTEGER NOT NULL,aciertos_count INTEGER NOT NULL,PRIMARY KEY(categoria,turno,valor,anio,mes))");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_cat_valor ON cumplimiento_bitmask(categoria,valor)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_anio_mes ON cumplimiento_bitmask(anio,mes)");}if(o<5){d.execSQL("CREATE TABLE IF NOT EXISTS metodos(id INTEGER PRIMARY KEY AUTOINCREMENT,nombre TEXT,categoria TEXT,turno TEXT,dias_bitmask INTEGER,tamano_pool INTEGER,numeros_pool TEXT,fecha_creacion INTEGER,estado TEXT,racha_actual INTEGER,mayor_racha INTEGER,ultimo_fallo TEXT,meses_consecutivos_fallando INTEGER,total_meses INTEGER,total_cumplidos INTEGER,total_fallados INTEGER,activo INTEGER DEFAULT 1)");d.execSQL("CREATE TABLE IF NOT EXISTS metodos_historial(id INTEGER PRIMARY KEY AUTOINCREMENT,metodo_id INTEGER,anio INTEGER,mes INTEGER,cumplio INTEGER,numeros_salieron TEXT)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_activo ON metodos(activo)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_metodos_hist ON metodos_historial(metodo_id)");}if(o<6){d.execSQL("CREATE TABLE IF NOT EXISTS alertas(id INTEGER PRIMARY KEY AUTOINCREMENT,metodo_id INTEGER,nombre_metodo TEXT,tipo TEXT,estado_anterior TEXT,estado_nuevo TEXT,mensaje TEXT,fecha INTEGER,leida INTEGER DEFAULT 0)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_alertas_leida ON alertas(leida)");}}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
+static class DBHelperAux extends SQLiteOpenHelper{DBHelperAux(Context c){super(c,"loteria.db",null,6);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}}
 static class Importer{
 static int importStream(DB db,InputStream in,String name)throws Exception{byte[] data=readAll(in);String lower=name.toLowerCase();if(isZip(data)){if(lower.endsWith(".xlsx"))return xlsx(db,data);if(lower.endsWith(".docx"))return docx(db,data);}return text(db,new String(data,StandardCharsets.UTF_8));}
 static boolean isZip(byte[] d){return d.length>4&&d[0]=='P'&&d[1]=='K';}
