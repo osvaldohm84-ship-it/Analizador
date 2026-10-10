@@ -16,12 +16,56 @@ findViewById(R.id.menuImportar).setOnClickListener(v->{drawerLayout.closeDrawers
 findViewById(R.id.menuNuevo).setOnClickListener(v->{drawerLayout.closeDrawers();nuevo();});
 findViewById(R.id.menuExportar).setOnClickListener(v->{drawerLayout.closeDrawers();exportar();});
 findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers();calcular();});
+findViewById(R.id.menuBitmask).setOnClickListener(v->{drawerLayout.closeDrawers();reconstruirBitmask();});
 findViewById(R.id.menuMejoras).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MejorasActivity.class));});
-findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.0").setPositiveButton("OK",null).show();});
-if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();runOnUiThread(()->estado.setText("Historial cargado: "+n));}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}else estado.setText("Historial: "+db.count()+" sorteos");}
+findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.1").setPositiveButton("OK",null).show();});
+if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();
+int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
+final int fn=n;final int ff=filas;
+runOnUiThread(()->estado.setText("Historial cargado: "+fn+" | Bitmask: "+ff));
+}catch(Exception e){runOnUiThread(()->estado.setText("Error: "+e.getMessage()));}}).start();}
+else{
+estado.setText("Historial: "+db.count()+" sorteos");
+new Thread(()->{
+try{
+int filas=BitmaskBuilder.contarFilas(db.getReadableDatabase());
+if(filas<=0){
+int f=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
+runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "+f));
+}else{
+final int f=filas;
+runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "+f));
+}
+}catch(Exception e){}
+}).start();
+}
+}
+void reconstruirBitmask(){
+new Thread(()->{
+try{
+runOnUiThread(()->estado.setText("Reconstruyendo bitmask..."));
+int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
+final int f=filas;
+runOnUiThread(()->{
+estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "+f);
+Toast.makeText(this,"Bitmask actualizada: "+f+" filas",Toast.LENGTH_LONG).show();
+});
+}catch(Exception e){
+runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());
+}
+}).start();
+}
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;
-if(r==PICK){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->{estado.setText("Importados: "+n+" Total: "+db.count());new Thread(this::validarPrediccionesAuto).start();});}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
+if(r==PICK){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->{estado.setText("Importados: "+n+" Total: "+db.count());new Thread(this::validarPrediccionesAuto).start();});
+runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()+"\nActualizando bitmask..."));
+int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
+final int nf=n;final int ff=filas;
+runOnUiThread(()->{
+estado.setText("Importados: "+nf+" | Total: "+db.count()+" | Bitmask: "+ff);
+Toast.makeText(this,"Bitmask actualizada: "+ff+" filas",Toast.LENGTH_LONG).show();
+});
+}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
 else if(r==CREATE){Uri u=d.getData();new Thread(()->{try{OutputStream out=getContentResolver().openOutputStream(u);if(out==null){runOnUiThread(()->Toast.makeText(this,"No se pudo abrir el archivo",Toast.LENGTH_LONG).show());return;}
 Writer w=new OutputStreamWriter(out,StandardCharsets.UTF_8);
 w.write("Fecha,TN,Centena,Fijo,C1,C2\n");
@@ -31,7 +75,9 @@ cur.close();w.close();
 runOnUiThread(()->new AlertDialog.Builder(this).setTitle("Listo").setMessage("Archivo CSV guardado correctamente").setPositiveButton("OK",null).show());
 }catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}}
 String getName(Uri u){Cursor c=getContentResolver().query(u,null,null,null,null);if(c!=null){try{int x=c.getColumnIndex(OpenableColumns.DISPLAY_NAME);if(c.moveToFirst()&&x>=0)return c.getString(x);}finally{c.close();}}return "archivo";}
-void nuevo(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);String[] h={"Fecha dd-MM-yyyy","T/N","Centena","Fijo","Corrido 1","Corrido 2"};EditText[] e=new EditText[6];for(int i=0;i<6;i++){e[i]=new EditText(this);e[i].setHint(h[i]);l.addView(e[i]);}new AlertDialog.Builder(this).setTitle("Agregar sorteo").setView(l).setPositiveButton("Guardar",(x,w)->{try{db.insert(new Draw(e[0].getText().toString(),e[1].getText().toString(),e[2].getText().toString(),pad(e[3].getText().toString()),pad(e[4].getText().toString()),pad(e[5].getText().toString())));estado.setText("Total: "+db.count());new Thread(this::validarPrediccionesAuto).start();}catch(Exception z){Toast.makeText(this,"Error: "+z.getMessage(),Toast.LENGTH_LONG).show();}}).setNegativeButton("Cancelar",null).show();}
+void nuevo(){LinearLayout l=new LinearLayout(this);l.setOrientation(LinearLayout.VERTICAL);String[] h={"Fecha dd-MM-yyyy","T/N","Centena","Fijo","Corrido 1","Corrido 2"};EditText[] e=new EditText[6];for(int i=0;i<6;i++){e[i]=new EditText(this);e[i].setHint(h[i]);l.addView(e[i]);}new AlertDialog.Builder(this).setTitle("Agregar sorteo").setView(l).setPositiveButton("Guardar",(x,w)->{try{db.insert(new Draw(e[0].getText().toString(),e[1].getText().toString(),e[2].getText().toString(),pad(e[3].getText().toString()),pad(e[4].getText().toString()),pad(e[5].getText().toString())));estado.setText("Total: "+db.count());new Thread(this::validarPrediccionesAuto).start();
+new Thread(()->{try{int f=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());final int ff=f;runOnUiThread(()->Toast.makeText(this,"Bitmask actualizada: "+ff+" filas",Toast.LENGTH_SHORT).show());}catch(Exception ex){}}).start();
+}catch(Exception z){Toast.makeText(this,"Error: "+z.getMessage(),Toast.LENGTH_LONG).show();}}).setNegativeButton("Cancelar",null).show();}
 String pad(String s){s=s.trim();if(s.length()==1)s="0"+s;return s;}
 void calcular(){new Thread(()->{try{List<Draw> lista=leerTodos();Stats s=Stats.calc(lista);runOnUiThread(()->{dibujarTabla(s);mostrarHoy(s,lista);mostrarCalientes(s);mostrarFrios(s);mostrarSesgos(s);mostrarCentenas(s);mostrarCombinaciones(s);mostrarBacktesting(s);estado.setText("Listo. "+lista.size()+" sorteos procesados.");});}catch(Exception e){runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG).show());}}).start();}
 List<Draw> leerTodos(){List<Draw> lista=new ArrayList<>();Cursor c=db.all();while(c.moveToNext()){lista.add(new Draw(c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)));}c.close();return lista;}
@@ -142,8 +188,8 @@ tabla.addView(fila);}}
 TextView celda(String txt,String bg,int colorTexto,boolean negrita){TextView tv=new TextView(this);tv.setText(txt);tv.setPadding(6,8,6,8);tv.setTextSize(10);tv.setTextColor(colorTexto);tv.setBackgroundColor(Color.parseColor(bg));if(negrita)tv.setTypeface(null,Typeface.BOLD);return tv;}
 void exportar(){Intent intent=new Intent(Intent.ACTION_CREATE_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType("text/csv");intent.putExtra(Intent.EXTRA_TITLE,"historial_loteria.csv");startActivityForResult(intent,CREATE);}
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");}public void onUpgrade(SQLiteDatabase d,int o,int n){if(o<2){d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");}}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
-static class DBHelperAux extends SQLiteOpenHelper{DBHelperAux(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,3);}public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE draws(id INTEGER PRIMARY KEY AUTOINCREMENT,date TEXT,tn TEXT,cent TEXT,fijo TEXT,c1 TEXT,c2 TEXT,UNIQUE(date,tn,fijo,c1,c2))");d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");d.execSQL("CREATE TABLE IF NOT EXISTS cumplimiento_bitmask(categoria TEXT NOT NULL,turno TEXT NOT NULL,valor INTEGER NOT NULL,anio INTEGER NOT NULL,mes INTEGER NOT NULL,bitmask INTEGER NOT NULL,aciertos_count INTEGER NOT NULL,PRIMARY KEY(categoria,turno,valor,anio,mes))");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_cat_valor ON cumplimiento_bitmask(categoria,valor)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_anio_mes ON cumplimiento_bitmask(anio,mes)");}public void onUpgrade(SQLiteDatabase d,int o,int n){if(o<2){d.execSQL("CREATE TABLE IF NOT EXISTS predicciones(id INTEGER PRIMARY KEY AUTOINCREMENT,fecha TEXT,rango TEXT,top5Fijo TEXT,top5C1 TEXT,top5C2 TEXT,top5Dec TEXT,top5Term TEXT,resultadoFijo TEXT DEFAULT '',resultadoC1 TEXT DEFAULT '',resultadoC2 TEXT DEFAULT '',resultadoDec TEXT DEFAULT '',resultadoTerm TEXT DEFAULT '',aciertosFijo INTEGER DEFAULT 0,aciertosC1 INTEGER DEFAULT 0,aciertosC2 INTEGER DEFAULT 0,aciertosDec INTEGER DEFAULT 0,aciertosTerm INTEGER DEFAULT 0,validada INTEGER DEFAULT 0)");}if(o<3){d.execSQL("CREATE TABLE IF NOT EXISTS cumplimiento_bitmask(categoria TEXT NOT NULL,turno TEXT NOT NULL,valor INTEGER NOT NULL,anio INTEGER NOT NULL,mes INTEGER NOT NULL,bitmask INTEGER NOT NULL,aciertos_count INTEGER NOT NULL,PRIMARY KEY(categoria,turno,valor,anio,mes))");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_cat_valor ON cumplimiento_bitmask(categoria,valor)");d.execSQL("CREATE INDEX IF NOT EXISTS idx_cumplimiento_anio_mes ON cumplimiento_bitmask(anio,mes)");}}void insert(Draw x){ContentValues v=new ContentValues();v.put("date",x.date);v.put("tn",x.tn);v.put("cent",x.cent);v.put("fijo",x.f);v.put("c1",x.c1);v.put("c2",x.c2);getWritableDatabase().insertWithOnConflict("draws",null,v,SQLiteDatabase.CONFLICT_IGNORE);}int count(){Cursor c=getReadableDatabase().rawQuery("select count(*) from draws",null);c.moveToFirst();int n=c.getInt(0);c.close();return n;}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
+static class DBHelperAux extends SQLiteOpenHelper{DBHelperAux(Context c){super(c,"loteria.db",null,3);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}}
 static class Importer{
 static int importStream(DB db,InputStream in,String name)throws Exception{byte[] data=readAll(in);String lower=name.toLowerCase();if(isZip(data)){if(lower.endsWith(".xlsx"))return xlsx(db,data);if(lower.endsWith(".docx"))return docx(db,data);}return text(db,new String(data,StandardCharsets.UTF_8));}
 static boolean isZip(byte[] d){return d.length>4&&d[0]=='P'&&d[1]=='K';}
