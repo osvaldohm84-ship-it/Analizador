@@ -11,5 +11,6 @@
   <activity android:name=".EstadisticasActivity" android:screenOrientation="portrait" android:exported="false"/>
   <activity android:name=".MejorasActivity" android:screenOrientation="portrait" android:exported="false"/>
   <activity android:name=".CumplimientoActivity" android:screenOrientation="portrait" android:exported="false"/>
+  <activity android:name=".MetodosActivity" android:screenOrientation="portrait" android:exported="false"/>
  </application>
 </manifest>
