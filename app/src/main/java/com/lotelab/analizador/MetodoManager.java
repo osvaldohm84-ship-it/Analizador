@@ -91,7 +91,7 @@ db.update(TABLA,v,"id=?",new String[]{String.valueOf(id)});
 db.close();
 }
 static class DBHelper extends SQLiteOpenHelper{
-DBHelper(Context c){super(c,"loteria.db",null,5);}
+DBHelper(Context c){super(c,"loteria.db",null,6);}
 public void onCreate(SQLiteDatabase d){}
 public void onUpgrade(SQLiteDatabase d,int o,int n){}
 }
