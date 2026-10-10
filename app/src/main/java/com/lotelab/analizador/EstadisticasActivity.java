@@ -18,12 +18,12 @@ boolean[] filtroDias={true,true,true,true,true,true,true};
 boolean[] filtroMeses={true,true,true,true,true,true,true,true,true,true,true,true};
 static final int TOP_PARLETS=100;
 static final int PARLETS_POR_PAGINA=200;
-static final String[] DIAS_NOMBRE={"Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"};
+static final String[] DIAS_NOMBRE={"Lunes","Martes","Miercoles","Jueves","Viernes","Sabado","Domingo"};
 static final String[] MESES_NOMBRE={"Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"};
 List<Est> ultimaLista=new ArrayList<>();
 List<Par> ultimaListaPar=new ArrayList<>();
 static final int CREATE_STATS=30;
-static final String[] CATEGORIAS={"Números","Centenas","Decenas","Unidades","Dígitos","Parlets"};
+static final String[] CATEGORIAS={"Numeros","Centenas","Decenas","Unidades","Digitos","Parlets"};
 static final String[] FILTROS_POS={"Todas","Solo Fijo","Solo C1","Solo C2","Solo Centenas","Solo Corridos"};
 @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_estadisticas);
 fechaDesde=findViewById(R.id.fechaDesde);
@@ -84,7 +84,7 @@ if(filtroTurno.equals("T"))rbTodas.setChecked(true);
 else if(filtroTurno.equals("Tar"))rbTarde.setChecked(true);
 else if(filtroTurno.equals("Noc"))rbNoche.setChecked(true);
 rg.addView(rbTodas);rg.addView(rbTarde);rg.addView(rbNoche);principal.addView(rg);
-TextView tvDias=new TextView(this);tvDias.setText("DÍAS DE LA SEMANA:");tvDias.setTextSize(13);tvDias.setTextColor(Color.parseColor("#0D47A1"));tvDias.setTypeface(null,Typeface.BOLD);tvDias.setPadding(0,14,0,6);principal.addView(tvDias);
+TextView tvDias=new TextView(this);tvDias.setText("DIAS DE LA SEMANA:");tvDias.setTextSize(13);tvDias.setTextColor(Color.parseColor("#0D47A1"));tvDias.setTypeface(null,Typeface.BOLD);tvDias.setPadding(0,14,0,6);principal.addView(tvDias);
 final CheckBox[] cbDias=new CheckBox[7];
 LinearLayout contDias=new LinearLayout(this);contDias.setOrientation(LinearLayout.VERTICAL);
 for(int i=0;i<7;i++){
@@ -95,7 +95,7 @@ cbDias[i].setChecked(filtroDias[i]);
 contDias.addView(cbDias[i]);
 }
 principal.addView(contDias);
-TextView tvMeses=new TextView(this);tvMeses.setText("MESES DEL AÑO:");tvMeses.setTextSize(13);tvMeses.setTextColor(Color.parseColor("#0D47A1"));tvMeses.setTypeface(null,Typeface.BOLD);tvMeses.setPadding(0,14,0,6);principal.addView(tvMeses);
+TextView tvMeses=new TextView(this);tvMeses.setText("MESES DEL ANIO:");tvMeses.setTextSize(13);tvMeses.setTextColor(Color.parseColor("#0D47A1"));tvMeses.setTypeface(null,Typeface.BOLD);tvMeses.setPadding(0,14,0,6);principal.addView(tvMeses);
 final CheckBox[] cbMeses=new CheckBox[12];
 LinearLayout contMeses=new LinearLayout(this);contMeses.setOrientation(LinearLayout.VERTICAL);
 for(int i=0;i<12;i++){
@@ -106,7 +106,7 @@ cbMeses[i].setChecked(filtroMeses[i]);
 contMeses.addView(cbMeses[i]);
 }
 principal.addView(contMeses);
-new AlertDialog.Builder(this).setTitle("🎛️ Filtrar").setView(scroll).setPositiveButton("Aplicar",(d,w)->{
+new AlertDialog.Builder(this).setTitle("Filtrar").setView(scroll).setPositiveButton("Aplicar",(d,w)->{
 if(rbTarde.isChecked())filtroTurno="Tar";
 else if(rbNoche.isChecked())filtroTurno="Noc";
 else filtroTurno="T";
@@ -134,7 +134,7 @@ paginaActual=pag;
 dibujarParlets();
 }
 void elegirCategoria(){
-new AlertDialog.Builder(this).setTitle("Seleccione cuál desea ver:").setCancelable(false).setItems(CATEGORIAS,(d,w)->{
+new AlertDialog.Builder(this).setTitle("Seleccione cual desea ver:").setCancelable(false).setItems(CATEGORIAS,(d,w)->{
 categoria=w;
 paginaActual=1;
 resetearFiltros();
@@ -142,18 +142,18 @@ if(categoria==4){elegirFiltroPosicion();}else{filtroPosicion=0;btnVer.setText("V
 }).show();
 }
 void elegirFiltroPosicion(){
-new AlertDialog.Builder(this).setTitle("Filtro posición:").setItems(FILTROS_POS,(d,w)->{
+new AlertDialog.Builder(this).setTitle("Filtro posicion:").setItems(FILTROS_POS,(d,w)->{
 filtroPosicion=w;
-btnVer.setText("Ver: Dígitos/"+FILTROS_POS[w]);
+btnVer.setText("Ver: Digitos/"+FILTROS_POS[w]);
 analizar();
 }).show();
 }
 void elegirOrden(){
 String[] opciones;
 switch(categoria){
-case 0:opciones=new String[]{"Número","Salidas","Frecuencia","Estabilidad","Como Fijo","Como Corrido","Tarde","Noche","Sin salir","Mayor sin salir","Promedio sin salir"};break;
-case 1:case 2:case 3:opciones=new String[]{"Dígito","Salidas","Frecuencia","Estabilidad","Tarde","Noche","Porcentaje","Sin salir","Mayor sin salir","Promedio sin salir"};break;
-case 4:opciones=new String[]{"Dígito","Apariciones","Frecuencia","Estabilidad","Porcentaje","Sin salir","Mayor sin salir","Promedio sin salir"};break;
+case 0:opciones=new String[]{"Numero","Salidas","Frecuencia","Estabilidad","Como Fijo","Como Corrido","Tarde","Noche","Sin salir","Mayor sin salir","Promedio sin salir"};break;
+case 1:case 2:case 3:opciones=new String[]{"Digito","Salidas","Frecuencia","Estabilidad","Tarde","Noche","Porcentaje","Sin salir","Mayor sin salir","Promedio sin salir"};break;
+case 4:opciones=new String[]{"Digito","Apariciones","Frecuencia","Estabilidad","Porcentaje","Sin salir","Mayor sin salir","Promedio sin salir"};break;
 case 5:opciones=new String[]{"Parlet","Apariciones","Frecuencia","Estabilidad","Tarde","Noche"};break;
 default:opciones=new String[]{"Pos"};break;
 }
@@ -171,10 +171,8 @@ return true;
 }
 int range(String date){
 try{
-String[] q=date.split("[-/]");
-int day=Integer.parseInt(q[0]);
-Calendar cal=Calendar.getInstance();
 int[] f=parseFecha(date);
+Calendar cal=Calendar.getInstance();
 cal.set(f[2],f[1]-1,f[0]);
 int dow=cal.get(Calendar.DAY_OF_WEEK);
 if(dow==Calendar.MONDAY)return 0;
@@ -432,7 +430,7 @@ contadorStats.setText(numSorteos+" sorteos");
 void dibujarDigCat(List<Est> lista){
 barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
-String[] h={"Pos","Díg","Sal","Frec","Estab","Tar","Noc","%","SiSal","MaySS","ProSS"};
+String[] h={"Pos","Dig","Sal","Frec","Estab","Tar","Noc","%","SiSal","MaySS","ProSS"};
 TableRow enc=new TableRow(this);
 for(String s:h)enc.addView(celda(s,"#1565C0",Color.WHITE,true));
 tablaStats.addView(enc);
@@ -458,7 +456,7 @@ contadorStats.setText(numSorteos+" sorteos");
 void dibujarDigTodos(List<Est> lista){
 barraPaginacion.setVisibility(View.GONE);
 tablaStats.removeAllViews();tablaStats.setBackgroundColor(Color.parseColor("#9E9E9E"));
-String[] h={"Pos","Díg","Veces","Frec","Estab","%","SiSal","MaySS","ProSS"};
+String[] h={"Pos","Dig","Veces","Frec","Estab","%","SiSal","MaySS","ProSS"};
 TableRow enc=new TableRow(this);
 for(String s:h)enc.addView(celda(s,"#1565C0",Color.WHITE,true));
 tablaStats.addView(enc);
@@ -489,7 +487,7 @@ if(paginaActual<1)paginaActual=1;
 int inicio=(paginaActual-1)*PARLETS_POR_PAGINA;
 int fin=Math.min(inicio+PARLETS_POR_PAGINA,total);
 barraPaginacion.setVisibility(totalPaginas>1?View.VISIBLE:View.GONE);
-txtPagina.setText("Pág: "+paginaActual+"/"+totalPaginas);
+txtPagina.setText("Pag: "+paginaActual+"/"+totalPaginas);
 btnPagPrimera.setEnabled(paginaActual>1);
 btnPagAnt.setEnabled(paginaActual>1);
 btnPagSig.setEnabled(paginaActual<totalPaginas);
@@ -552,5 +550,5 @@ List<Draw> leerTodos(){List<Draw> l=new ArrayList<>();DB db=new DB(this);Cursor 
 static class Est{int id;int veces;int coFij;int coCor;int tar;int noc;int siSal=-1;int maySS=-1;int proSS=-1;double estab=-1;}
 static class Par{String par;int veces;int tar;int noc;double estab=-1;Par(String p,int v,int t,int n){par=p;veces=v;tar=t;noc=n;}}
 static class Draw{String date,tn,cent,f,c1,c2;Draw(String a,String b,String c,String d,String e,String f){date=a;tn=b;cent=c;this.f=d;c1=e;c2=f;}}
-static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,2);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
+static class DB extends SQLiteOpenHelper{DB(Context c){super(c,"loteria.db",null,4);}public void onCreate(SQLiteDatabase d){}public void onUpgrade(SQLiteDatabase d,int o,int n){}Cursor all(){return getReadableDatabase().query("draws",null,null,null,null,null,"id ASC");}}
 }
