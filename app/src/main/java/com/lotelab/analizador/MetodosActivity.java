@@ -1,19 +1,23 @@
 package com.lotelab.analizador;
 import android.app.*;import android.os.*;import android.graphics.*;import android.view.*;import android.widget.*;import java.util.*;
 public class MetodosActivity extends Activity{
-LinearLayout contenedor;
-TextView lblContador,lblResumen;
+LinearLayout contenedor,contenedorAlertas;
+TextView lblContador,lblResumen,lblAlertasTitulo;
 List<Metodo> metodos=new ArrayList<>();
+List<Alerta> alertas=new ArrayList<>();
 @Override protected void onCreate(Bundle b){super.onCreate(b);setContentView(R.layout.activity_metodos);
 contenedor=findViewById(R.id.contenedor);
+contenedorAlertas=findViewById(R.id.contenedorAlertas);
 lblContador=findViewById(R.id.lblContador);
 lblResumen=findViewById(R.id.lblResumen);
+lblAlertasTitulo=findViewById(R.id.lblAlertasTitulo);
 findViewById(R.id.btnVolver).setOnClickListener(v->finish());
-cargarMetodos();
+cargarTodo();
 }
-@Override protected void onResume(){super.onResume();cargarMetodos();}
-void cargarMetodos(){
+@Override protected void onResume(){super.onResume();cargarTodo();}
+void cargarTodo(){
 metodos=MetodoManager.listar(this);
+alertas=AlertaManager.listarNoLeidas(this);
 lblContador.setText(metodos.size()+" metodos");
 int cumpliendo=0,riesgo=0,alerta=0;
 for(Metodo m:metodos){
@@ -22,7 +26,62 @@ else if("RIESGO".equals(m.estado))riesgo++;
 else if("ALERTA".equals(m.estado))alerta++;
 }
 lblResumen.setText("🟢 "+cumpliendo+"  🟡 "+riesgo+"  🔴 "+alerta);
+dibujarAlertas();
 dibujarLista();
+}
+void dibujarAlertas(){
+contenedorAlertas.removeAllViews();
+if(alertas.isEmpty()){
+lblAlertasTitulo.setVisibility(View.GONE);
+return;
+}
+lblAlertasTitulo.setVisibility(View.VISIBLE);
+lblAlertasTitulo.setText("🔔 ALERTAS ("+alertas.size()+" sin leer)");
+for(final Alerta a:alertas){
+LinearLayout card=new LinearLayout(this);
+card.setOrientation(LinearLayout.VERTICAL);
+card.setPadding(14,10,14,10);
+card.setBackgroundColor(Color.parseColor("#FFF9C4"));
+LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+lp.setMargins(0,0,0,6);
+card.setLayoutParams(lp);
+TextView tvTitulo=new TextView(this);
+tvTitulo.setText(a.getEmoji()+" "+a.nombreMetodo);
+tvTitulo.setTextSize(13);
+tvTitulo.setTypeface(null,Typeface.BOLD);
+tvTitulo.setTextColor(Color.parseColor("#0D47A1"));
+card.addView(tvTitulo);
+TextView tvMsg=new TextView(this);
+tvMsg.setText(a.mensaje);
+tvMsg.setTextSize(12);
+tvMsg.setTextColor(Color.parseColor("#424242"));
+card.addView(tvMsg);
+TextView tvFecha=new TextView(this);
+tvFecha.setText(a.formatearFecha());
+tvFecha.setTextSize(10);
+tvFecha.setTextColor(Color.parseColor("#757575"));
+card.addView(tvFecha);
+card.setOnClickListener(v->{
+new AlertDialog.Builder(this).setTitle("Marcar como leida?").setMessage(a.nombreMetodo)
+.setPositiveButton("Si",(d,w)->{AlertaManager.marcarComoLeida(this,a.id);cargarTodo();})
+.setNegativeButton("No",null).show();
+});
+contenedorAlertas.addView(card);
+}
+LinearLayout.LayoutParams lpBtn=new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+lpBtn.setMargins(0,6,0,16);
+Button btnMarcar=new Button(this);
+btnMarcar.setText("Marcar todas como leidas");
+btnMarcar.setTextSize(12);
+btnMarcar.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#F57F17")));
+btnMarcar.setTextColor(Color.WHITE);
+btnMarcar.setLayoutParams(lpBtn);
+btnMarcar.setOnClickListener(v->{
+new AlertDialog.Builder(this).setTitle("Marcar todas?").setMessage("Marcar "+alertas.size+" alertas como leidas?")
+.setPositiveButton("Si",(d,w)->{AlertaManager.marcarTodasComoLeidas(this);NotificacionHelper.cancelar(this);cargarTodo();})
+.setNegativeButton("No",null).show();
+});
+contenedorAlertas.addView(btnMarcar);
 }
 void dibujarLista(){
 contenedor.removeAllViews();
@@ -53,8 +112,10 @@ View borde=new View(this);
 borde.setBackgroundColor(colorBorde);
 borde.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,6));
 card.addView(borde);
+boolean tieneAlerta=false;
+for(Alerta a:alertas){if(a.metodoId==m.id){tieneAlerta=true;break;}}
 TextView tvNombre=new TextView(this);
-tvNombre.setText(m.getEstadoEmoji()+" "+m.nombre);
+tvNombre.setText(m.getEstadoEmoji()+" "+(tieneAlerta?"🔔 ":"")+m.nombre);
 tvNombre.setTextSize(14);
 tvNombre.setTypeface(null,Typeface.BOLD);
 tvNombre.setTextColor(Color.parseColor("#0D47A1"));
@@ -116,7 +177,7 @@ new AlertDialog.Builder(this).setTitle("Eliminar metodo")
 .setPositiveButton("Eliminar",(d,w)->{
 MetodoManager.eliminar(this,m.id);
 Toast.makeText(this,"Metodo eliminado",Toast.LENGTH_SHORT).show();
-cargarMetodos();
+cargarTodo();
 })
 .setNegativeButton("Cancelar",null).show();
 }
