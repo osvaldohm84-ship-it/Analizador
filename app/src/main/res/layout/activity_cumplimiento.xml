@@ -1,1 +1,128 @@
-app/src/main/res/layout/activity_cumplimiento.xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
+
+<LinearLayout
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:background="#1565C0"
+    android:gravity="center_vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:id="@+id/btnVolver"
+    android:text="◀"
+    android:textSize="20sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:paddingStart="8dp"
+    android:paddingEnd="16dp"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:text="🧪 TEST DE CUMPLIMIENTO"
+    android:textSize="16sp"
+    android:textStyle="bold"
+    android:textColor="#FFFFFF"
+    android:layout_weight="1"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+<LinearLayout
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+<TextView
+    android:text="DIAS DEL MES:"
+    android:textSize="13sp"
+    android:textStyle="bold"
+    android:textColor="#0D47A1"
+    android:paddingBottom="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<LinearLayout
+    android:id="@+id/grillaDias"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/lblDiasSeleccionados"
+    android:text="Dias: (ninguno)"
+    android:textSize="12sp"
+    android:textColor="#616161"
+    android:paddingTop="6dp"
+    android:paddingBottom="10dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnCategoria"
+    android:text="Categoria: FIJO"
+    android:textSize="13sp"
+    android:backgroundTint="#6A1B9A"
+    android:textColor="#FFFFFF"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnTurno"
+    android:text="Turno: AMBOS"
+    android:textSize="13sp"
+    android:backgroundTint="#00897B"
+    android:textColor="#FFFFFF"
+    android:layout_marginTop="6dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnCalcular"
+    android:text="🔍 CALCULAR CUMPLIMIENTO"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:backgroundTint="#D84315"
+    android:textColor="#FFFFFF"
+    android:layout_marginTop="12dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
+    android:id="@+id/txtResultados"
+    android:textSize="12sp"
+    android:textColor="#212121"
+    android:lineSpacingExtra="3dp"
+    android:paddingTop="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<Button
+    android:id="@+id/btnGuardar"
+    android:text="💾 GUARDAR METODOS"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:backgroundTint="#1B5E20"
+    android:textColor="#FFFFFF"
+    android:visibility="gone"
+    android:layout_marginTop="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
+</ScrollView>
+
+</LinearLayout>
