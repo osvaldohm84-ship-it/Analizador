@@ -46,7 +46,7 @@ new Thread(()->{
 try{
 Set<Integer> dias=new TreeSet<>();
 dias.add(1);dias.add(2);dias.add(3);
-CumplimientoResultado r=CumplimientoEngine.calcular(db.getReadableDatabase(),dias,"FIJO","AMBOS",0.95);
+CumplimientoResultado r=CumplimientoEngine.calcular(db.getReadableDatabase(),dias,"FIJO","AMBOS",0.50);
 final String resumen=CumplimientoEngine.resumenCorto(r);
 runOnUiThread(()->{
 new AlertDialog.Builder(this).setTitle("🧪 Test Cumplimiento").setMessage(resumen).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
