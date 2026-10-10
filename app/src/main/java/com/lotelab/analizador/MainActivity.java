@@ -19,7 +19,7 @@ findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers
 findViewById(R.id.menuBitmask).setOnClickListener(v->{drawerLayout.closeDrawers();reconstruirBitmask();});
 findViewById(R.id.menuTestCumplimiento).setOnClickListener(v->{drawerLayout.closeDrawers();testCumplimiento();});
 findViewById(R.id.menuMejoras).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MejorasActivity.class));});
-findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.2").setPositiveButton("OK",null).show();});
+findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.3").setPositiveButton("OK",null).show();});
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();
 int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
 final int fn=n;final int ff=filas;
@@ -44,41 +44,20 @@ runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "
 void testCumplimiento(){
 new Thread(()->{
 try{
-Cursor c=db.getReadableDatabase().rawQuery("SELECT valor,anio,mes,bitmask FROM cumplimiento_bitmask WHERE categoria='FIJO' AND turno='AMBOS' ORDER BY anio,mes LIMIT 10",null);
-StringBuilder muestra=new StringBuilder();
-int idx=1;
-while(c.moveToNext()){
-int valor=c.getInt(0);
-int anio=c.getInt(1);
-int mes=c.getInt(2);
-int bm=c.getInt(3);
-int bmDias123=bm&7;
-muestra.append(idx).append(". FIJO ").append(String.format("%02d",valor)).append(" ");
-muestra.append(anio).append("-").append(mes).append(" bm=").append(bm);
-muestra.append(" bm&7=").append(bmDias123).append("\n");
-idx++;
-}
-c.close();
-int countCumple=0;
-int total=0;
-Cursor c2=db.getReadableDatabase().rawQuery("SELECT valor,anio,mes,bitmask FROM cumplimiento_bitmask WHERE categoria='FIJO' AND turno='AMBOS'",null);
-while(c2.moveToNext()){
-int bm=c2.getInt(3);
-total++;
-if((bm&7)!=0)countCumple++;
-}
-c2.close();
-final String msg="Filas FIJO+AMBOS: "+total+"\nCumplen dias 1-2-3: "+countCumple+"\n\nPrimeras 10:\n"+muestra.toString();
+Set<Integer> dias=new TreeSet<>();
+dias.add(8);dias.add(9);
+CumplimientoResultado r=CumplimientoEngine.calcular(db.getReadableDatabase(),dias,"FIJO","AMBOS");
+final String resumen=CumplimientoEngine.resumenCorto(r);
 runOnUiThread(()->{
-new AlertDialog.Builder(this).setTitle("🔍 Debug FIJO").setMessage(msg).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
+new AlertDialog.Builder(this).setTitle("🧪 Cumplimiento días 8-9").setMessage(resumen).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
 ClipboardManager cm=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-cm.setPrimaryClip(ClipData.newPlainText("debug",msg));
-Toast.makeText(this,"Copiado",Toast.LENGTH_SHORT).show();
+cm.setPrimaryClip(ClipData.newPlainText("cumplimiento",resumen));
+Toast.makeText(this,"Copiado al portapapeles",Toast.LENGTH_SHORT).show();
 }).show();
 });
 }catch(final Exception e){
 runOnUiThread(()->{
-new AlertDialog.Builder(this).setTitle("Error").setMessage(e.toString()).setPositiveButton("OK",null).show();
+new AlertDialog.Builder(this).setTitle("Error").setMessage(e.toString()+"\n\n"+(e.getMessage()!=null?e.getMessage():"")).setPositiveButton("OK",null).show();
 });
 }
 }).start();
