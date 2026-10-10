@@ -9,19 +9,19 @@ r.categoria=categoria;
 r.turno=turno;
 r.umbral=umbral;
 r.totalNumerosCategoria=getTotalNumeros(categoria);
-int maskDias=0;
-for(int d:dias){if(d>=1&&d<=31)maskDias|=(1<<(d-1));}
+long maskDias=0L;
+for(int d:dias){if(d>=1&&d<=31)maskDias|=(1L<<(d-1));}
 if(maskDias==0){
 r.advertencias.add("No hay días seleccionados");
 return r;
 }
-Map<Integer,Map<String,Integer>> datosPorValor=leerBitmasks(db,categoria,turno);
+Map<Integer,Map<String,Long>> datosPorValor=leerBitmasks(db,categoria,turno);
 if(datosPorValor.isEmpty()){
 r.advertencias.add("Bitmask vacía. Reconstruir primero.");
 return r;
 }
 Set<String> mesesSet=new TreeSet<>();
-for(Map<String,Integer> m:datosPorValor.values()){
+for(Map<String,Long> m:datosPorValor.values()){
 mesesSet.addAll(m.keySet());
 }
 r.mesesTotales=mesesSet.size();
@@ -30,11 +30,11 @@ r.advertencias.add("No hay meses en la bitmask");
 return r;
 }
 for(int valor=0;valor<r.totalNumerosCategoria;valor++){
-Map<String,Integer> meses=datosPorValor.get(valor);
+Map<String,Long> meses=datosPorValor.get(valor);
 if(meses==null)continue;
 int cumplidos=0;
 for(String key:mesesSet){
-Integer bm=meses.get(key);
+Long bm=meses.get(key);
 if(bm!=null&&(bm&maskDias)!=0)cumplidos++;
 }
 double tasa=(double)cumplidos/r.mesesTotales;
@@ -47,17 +47,17 @@ generarAdvertencias(r);
 calcularVeredicto(r);
 return r;
 }
-static Map<Integer,Map<String,Integer>> leerBitmasks(SQLiteDatabase db,String categoria,String turno){
-Map<Integer,Map<String,Integer>> resultado=new HashMap<>();
+static Map<Integer,Map<String,Long>> leerBitmasks(SQLiteDatabase db,String categoria,String turno){
+Map<Integer,Map<String,Long>> resultado=new HashMap<>();
 try{
 Cursor c=db.rawQuery("SELECT valor,anio,mes,bitmask FROM "+TABLA+" WHERE categoria=? AND turno=?",new String[]{categoria,turno});
 while(c.moveToNext()){
 int valor=c.getInt(0);
 int anio=c.getInt(1);
 int mes=c.getInt(2);
-int bitmask=c.getInt(3);
+long bitmask=((long)c.getInt(3))&0xFFFFFFFFL;
 String key=anio+"_"+mes;
-Map<String,Integer> mapa=resultado.get(valor);
+Map<String,Long> mapa=resultado.get(valor);
 if(mapa==null){mapa=new HashMap<>();resultado.put(valor,mapa);}
 mapa.put(key,bitmask);
 }
@@ -65,18 +65,18 @@ c.close();
 }catch(Exception e){}
 return resultado;
 }
-static void calcularMetricasPool(CumplimientoResultado r,Map<Integer,Map<String,Integer>> datos,Set<String> meses,int maskDias){
+static void calcularMetricasPool(CumplimientoResultado r,Map<Integer,Map<String,Long>> datos,Set<String> meses,long maskDias){
 int mesesCumplidosPool=0;
 int aciertos=0;
 for(String mesKey:meses){
 boolean cumplioEsteMes=false;
 for(int valor:r.pool){
-Map<String,Integer> mapa=datos.get(valor);
+Map<String,Long> mapa=datos.get(valor);
 if(mapa==null)continue;
-Integer bm=mapa.get(mesKey);
+Long bm=mapa.get(mesKey);
 if(bm!=null&&(bm&maskDias)!=0){
 cumplioEsteMes=true;
-aciertos+=Integer.bitCount(bm&maskDias);
+aciertos+=Long.bitCount(bm&maskDias);
 }
 }
 if(cumplioEsteMes)mesesCumplidosPool++;
@@ -91,14 +91,14 @@ double probNoEnVentana=Math.pow(probNoEnSorteo,sorteosVentana);
 double probAlMenosUno=1-probNoEnVentana;
 r.aciertosEsperados=r.mesesTotales*probAlMenosUno;
 }
-static void calcularRachas(CumplimientoResultado r,Map<Integer,Map<String,Integer>> datos,Set<String> meses,int maskDias){
+static void calcularRachas(CumplimientoResultado r,Map<Integer,Map<String,Long>> datos,Set<String> meses,long maskDias){
 List<Boolean> cumplidosPorMes=new ArrayList<>();
 for(String mesKey:meses){
 boolean cumplio=false;
 for(int valor:r.pool){
-Map<String,Integer> mapa=datos.get(valor);
+Map<String,Long> mapa=datos.get(valor);
 if(mapa==null)continue;
-Integer bm=mapa.get(mesKey);
+Long bm=mapa.get(mesKey);
 if(bm!=null&&(bm&maskDias)!=0){cumplio=true;break;}
 }
 cumplidosPorMes.add(cumplio);
@@ -109,7 +109,7 @@ if(cumplidosPorMes.get(i))rachaActual++;
 else break;
 }
 r.rachaActual=rachaActual;
-int sequiaMax=0;int sequiaActual=0;int sequiaFinal=0;
+int sequiaMax=0;int sequiaActual=0;
 for(int i=0;i<cumplidosPorMes.size();i++){
 if(!cumplidosPorMes.get(i)){
 sequiaActual++;
@@ -118,20 +118,19 @@ if(sequiaActual>sequiaMax)sequiaMax=sequiaActual;
 sequiaActual=0;
 }
 }
-sequiaFinal=sequiaActual;
 r.mayorSequia=sequiaMax;
-r.mesesConsecutivosSinCumplir=sequiaFinal;
+r.mesesConsecutivosSinCumplir=sequiaActual;
 }
-static void calcularPorAnio(CumplimientoResultado r,Map<Integer,Map<String,Integer>> datos,Set<String> meses,int maskDias){
+static void calcularPorAnio(CumplimientoResultado r,Map<Integer,Map<String,Long>> datos,Set<String> meses,long maskDias){
 Map<Integer,List<Boolean>> porAnio=new TreeMap<>();
 for(String mesKey:meses){
 String[] partes=mesKey.split("_");
 int anio=Integer.parseInt(partes[0]);
 boolean cumplio=false;
 for(int valor:r.pool){
-Map<String,Integer> mapa=datos.get(valor);
+Map<String,Long> mapa=datos.get(valor);
 if(mapa==null)continue;
-Integer bm=mapa.get(mesKey);
+Long bm=mapa.get(mesKey);
 if(bm!=null&&(bm&maskDias)!=0){cumplio=true;break;}
 }
 List<Boolean> lista=porAnio.get(anio);
