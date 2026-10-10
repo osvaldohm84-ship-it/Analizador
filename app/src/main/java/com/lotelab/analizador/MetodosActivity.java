@@ -76,8 +76,9 @@ btnMarcar.setTextSize(12);
 btnMarcar.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#F57F17")));
 btnMarcar.setTextColor(Color.WHITE);
 btnMarcar.setLayoutParams(lpBtn);
+final int totalAlertas=alertas.size();
 btnMarcar.setOnClickListener(v->{
-new AlertDialog.Builder(this).setTitle("Marcar todas?").setMessage("Marcar "+alertas.size+" alertas como leidas?")
+new AlertDialog.Builder(this).setTitle("Marcar todas?").setMessage("Marcar "+totalAlertas+" alertas como leidas?")
 .setPositiveButton("Si",(d,w)->{AlertaManager.marcarTodasComoLeidas(this);NotificacionHelper.cancelar(this);cargarTodo();})
 .setNegativeButton("No",null).show();
 });
