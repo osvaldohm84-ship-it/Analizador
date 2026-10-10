@@ -95,9 +95,10 @@ cambios++;
 getPreferences(0).edit().putLong("ultimaValidacion",System.currentTimeMillis()).apply();
 if(cambios>0){
 final List<Alerta> alertasFinales=alertas;
+final int cambiosFinal=cambios;
 runOnUiThread(()->{
 NotificacionHelper.agruparYMostrar(this,alertasFinales);
-Toast.makeText(this,cambios+" metodo"+(cambios==1?"":"s")+" cambio de estado",Toast.LENGTH_LONG).show();
+Toast.makeText(this,cambiosFinal+" metodo"+(cambiosFinal==1?"":"s")+" cambio de estado",Toast.LENGTH_LONG).show();
 });
 }
 }catch(Exception e){}
