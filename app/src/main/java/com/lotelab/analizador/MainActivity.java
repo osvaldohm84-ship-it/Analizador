@@ -11,6 +11,7 @@ findViewById(R.id.menuBuscarDias).setOnClickListener(v->{drawerLayout.closeDrawe
 findViewById(R.id.menuBuscarNumeros).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,BuscarNumerosActivity.class));});
 findViewById(R.id.menuEstadisticas).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,EstadisticasActivity.class));});
 findViewById(R.id.menuCumplimiento).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,CumplimientoActivity.class));});
+findViewById(R.id.menuMetodos).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MetodosActivity.class));});
 findViewById(R.id.menuPredicciones).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,PrediccionesActivity.class));});
 findViewById(R.id.menuGuardarPred).setOnClickListener(v->{drawerLayout.closeDrawers();guardarPrediccion();});
 findViewById(R.id.menuImportar).setOnClickListener(v->{drawerLayout.closeDrawers();pick();});
@@ -20,7 +21,7 @@ findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers
 findViewById(R.id.menuBitmask).setOnClickListener(v->{drawerLayout.closeDrawers();reconstruirBitmask();});
 findViewById(R.id.menuTestCumplimiento).setOnClickListener(v->{drawerLayout.closeDrawers();testCumplimiento();});
 findViewById(R.id.menuMejoras).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MejorasActivity.class));});
-findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.5").setPositiveButton("OK",null).show();});
+findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.6").setPositiveButton("OK",null).show();});
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();
 int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
 final int fn=n;final int ff=filas;
