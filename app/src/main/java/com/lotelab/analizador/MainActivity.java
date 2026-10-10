@@ -17,8 +17,9 @@ findViewById(R.id.menuNuevo).setOnClickListener(v->{drawerLayout.closeDrawers();
 findViewById(R.id.menuExportar).setOnClickListener(v->{drawerLayout.closeDrawers();exportar();});
 findViewById(R.id.menuCalcular).setOnClickListener(v->{drawerLayout.closeDrawers();calcular();});
 findViewById(R.id.menuBitmask).setOnClickListener(v->{drawerLayout.closeDrawers();reconstruirBitmask();});
+findViewById(R.id.menuTestCumplimiento).setOnClickListener(v->{drawerLayout.closeDrawers();testCumplimiento();});
 findViewById(R.id.menuMejoras).setOnClickListener(v->{drawerLayout.closeDrawers();startActivity(new Intent(this,MejorasActivity.class));});
-findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.1").setPositiveButton("OK",null).show();});
+findViewById(R.id.menuAcerca).setOnClickListener(v->{drawerLayout.closeDrawers();new AlertDialog.Builder(this).setTitle("Acerca de").setMessage("Analizador de Loteria\nPick 3 · Pick 4 Florida\n\nVersion 1.2").setPositiveButton("OK",null).show();});
 if(!getPreferences(0).getBoolean("init",false)){new Thread(()->{try{InputStream in=getAssets().open("Florida_inicial.tsv");int n=Importer.importStream(db,in,"Florida_inicial.tsv");getPreferences(0).edit().putBoolean("init",true).apply();
 int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
 final int fn=n;final int ff=filas;
@@ -40,6 +41,27 @@ runOnUiThread(()->estado.setText("Historial: "+db.count()+" sorteos | Bitmask: "
 }).start();
 }
 }
+void testCumplimiento(){
+new Thread(()->{
+try{
+Set<Integer> dias=new TreeSet<>();
+dias.add(1);dias.add(2);dias.add(3);
+CumplimientoResultado r=CumplimientoEngine.calcular(db.getReadableDatabase(),dias,"FIJO","AMBOS",0.95);
+final String resumen=CumplimientoEngine.resumenCorto(r);
+runOnUiThread(()->{
+new AlertDialog.Builder(this).setTitle("🧪 Test Cumplimiento").setMessage(resumen).setPositiveButton("OK",null).setNeutralButton("Copiar",(d,w)->{
+ClipboardManager cm=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+cm.setPrimaryClip(ClipData.newPlainText("cumplimiento",resumen));
+Toast.makeText(this,"Copiado al portapapeles",Toast.LENGTH_SHORT).show();
+}).show();
+});
+}catch(final Exception e){
+runOnUiThread(()->{
+new AlertDialog.Builder(this).setTitle("Error").setMessage(e.toString()+"\n\n"+(e.getMessage()!=null?e.getMessage():"")).setPositiveButton("OK",null).show();
+});
+}
+}).start();
+}
 void reconstruirBitmask(){
 new Thread(()->{
 try{
@@ -57,8 +79,8 @@ runOnUiThread(()->Toast.makeText(this,"Error: "+e.getMessage(),Toast.LENGTH_LONG
 }
 void pick(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK);}
 @Override protected void onActivityResult(int r,int c,Intent d){super.onActivityResult(r,c,d);if(c!=RESULT_OK||d==null)return;
-if(r==PICK){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));runOnUiThread(()->{estado.setText("Importados: "+n+" Total: "+db.count());new Thread(this::validarPrediccionesAuto).start();});
-runOnUiThread(()->estado.setText("Importados: "+n+" Total: "+db.count()+"\nActualizando bitmask..."));
+if(r==PICK){Uri u=d.getData();new Thread(()->{try{InputStream in=getContentResolver().openInputStream(u);int n=Importer.importStream(db,in,getName(u));new Thread(this::validarPrediccionesAuto).start();
+runOnUiThread(()->estado.setText("Importados: "+n+" | Total: "+db.count()+"\nActualizando bitmask..."));
 int filas=BitmaskBuilder.poblarBitmask(db.getWritableDatabase());
 final int nf=n;final int ff=filas;
 runOnUiThread(()->{
@@ -299,7 +321,7 @@ if(fVal==numTop1(n[r][0]))s.acFijo[r]++;
 if(fVal/10==digTop1(dec[r][0]))s.acDec[r]++;
 if(fVal%10==digTop1(term[r][0]))s.acTerm[r]++;
 int c1Val=num(d.c1);if(c1Val>=0&&c1Val==numTop1(n[r][1]))s.acC1[r]++;
-int c2Val=num(d.c2);if(c2Val>=0&&c2Val==numTop1(n[r][2]))s.acC2[r]++;
+int c2Val=num(d.c2);if(c2Val>=0&&numTop1(n[r][2])==c2Val)s.acC2[r]++;
 }
 return s;
 }
