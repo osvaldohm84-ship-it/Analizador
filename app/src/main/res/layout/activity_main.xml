@@ -314,6 +314,15 @@
     android:layout_height="wrap_content"/>
 
 <TextView
+    android:id="@+id/menuMetodos"
+    android:text="📋  Mis Metodos"
+    android:textSize="15sp"
+    android:padding="14dp"
+    android:textColor="#212121"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"/>
+
+<TextView
     android:id="@+id/menuPredicciones"
     android:text="🎯  Mis predicciones"
     android:textSize="15sp"
